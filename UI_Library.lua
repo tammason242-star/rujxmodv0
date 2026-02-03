@@ -1,19 +1,14 @@
 --[[ 
     ⭐ KANYAPAK SHOP V3.0 - UI_Library.lua ⭐
-    Premium Mobile-Optimized Interface System
-    FIXED: Icon Button & Menu Display Issues
+    FIXED: PlayerGui + Mobile Optimized + All Working
 ]]
 
 local UI_Library = {}
-local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
--- ═══════════════════════════════════════════════════════════════════════════
--- 🎨 THEME SYSTEM
--- ═══════════════════════════════════════════════════════════════════════════
-
+-- THEME
 local Theme = {
     Primary = Color3.fromRGB(0, 255, 127),
     Secondary = Color3.fromRGB(255, 85, 127),
@@ -28,10 +23,7 @@ local Theme = {
     Danger = Color3.fromRGB(255, 50, 50)
 }
 
--- ═══════════════════════════════════════════════════════════════════════════
--- 🔊 SOUND EFFECTS (ปลอดภัย - ถ้าไม่เล่นก็ไม่มีปัญหา)
--- ═══════════════════════════════════════════════════════════════════════════
-
+-- SOUNDS
 local SoundAssets = {
     Toggle = "rbxassetid://12221967",
     Click = "rbxassetid://12221964",
@@ -55,10 +47,7 @@ local function PlaySound(SoundId, Volume)
     end)
 end
 
--- ═══════════════════════════════════════════════════════════════════════════
--- ⚡ ANIMATION HELPERS
--- ═══════════════════════════════════════════════════════════════════════════
-
+-- TWEEN HELPER
 local function CreateTween(Object, Duration, Properties, Style, Direction)
     if not Object then return nil end
     Style = Style or Enum.EasingStyle.Quad
@@ -77,22 +66,24 @@ local function PulseEffect(Object)
     CreateTween(Object, 0.1, { Size = OriginalSize })
 end
 
--- ═══════════════════════════════════════════════════════════════════════════
--- 📌 MAIN UI INITIALIZATION - FIXED VERSION
--- ═══════════════════════════════════════════════════════════════════════════
-
+-- MAIN INIT
 function UI_Library:Init()
     print("🎨 [KANYAPAK SHOP V3] UI Initializing...\n")
+    PlaySound(SoundAssets.Open, 0.4)
     
-    -- 1. MAIN SCREEN GUI
+    -- GET PLAYERGUI (FIX #1)
+    local LocalPlayer = game:GetService("Players").LocalPlayer
+    local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+    
+    -- CREATE SCREENGUI IN PLAYERGUI
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "KanyapakShop_V3"
-    ScreenGui.Parent = CoreGui
+    ScreenGui.Parent = PlayerGui
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ScreenGui.ResetOnSpawn = false
-    print("✅ [UI] ScreenGui Created")
+    print("✅ [UI] ScreenGui Created in PlayerGui")
     
-    -- 2. FLOATING SHOP ICON (ปุ่มสว่างสีเขียวที่มุมจอ)
+    -- FLOATING ICON
     local FloatingIcon = Instance.new("TextButton")
     FloatingIcon.Name = "FloatingShopIcon"
     FloatingIcon.Size = UDim2.new(0, 70, 0, 70)
@@ -106,6 +97,7 @@ function UI_Library:Init()
     FloatingIcon.Parent = ScreenGui
     FloatingIcon.ZIndex = 500
     FloatingIcon.CanQuery = true
+    FloatingIcon.AutoButtonColor = false
     
     local IconCorner = Instance.new("UICorner")
     IconCorner.CornerRadius = UDim.new(1, 0)
@@ -116,9 +108,9 @@ function UI_Library:Init()
     IconStroke.Thickness = 3
     IconStroke.Parent = FloatingIcon
     
-    print("✅ [UI] Floating Icon Created at Bottom-Right Corner")
+    print("✅ [UI] Floating Icon Created")
     
-    -- 3. MAIN MENU FRAME (แผงเมนูหลัก)
+    -- MAIN MENU FRAME
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "KanyapakMainMenu"
     MainFrame.Size = UDim2.new(0, 450, 0, 720)
@@ -126,7 +118,7 @@ function UI_Library:Init()
     MainFrame.BackgroundColor3 = Theme.Background
     MainFrame.BorderSizePixel = 0
     MainFrame.Parent = ScreenGui
-    MainFrame.Visible = false  -- เริ่มต้นปิดอยู่
+    MainFrame.Visible = false
     MainFrame.ZIndex = 400
     MainFrame.CanQuery = true
     
@@ -139,9 +131,9 @@ function UI_Library:Init()
     MainCorner.CornerRadius = UDim.new(0, 15)
     MainCorner.Parent = MainFrame
     
-    print("✅ [UI] Main Menu Frame Created")
+    print("✅ [UI] Main Frame Created")
     
-    -- 4. HEADER (แถบด้านบน)
+    -- HEADER
     local Header = Instance.new("Frame")
     Header.Name = "Header"
     Header.Size = UDim2.new(1, 0, 0, 50)
@@ -154,7 +146,6 @@ function UI_Library:Init()
     HeaderCorner.CornerRadius = UDim.new(0, 15)
     HeaderCorner.Parent = Header
     
-    -- Title
     local Title = Instance.new("TextLabel")
     Title.Text = "⭐ KANYAPAK SHOP V3"
     Title.Size = UDim2.new(0, 300, 1, 0)
@@ -167,7 +158,6 @@ function UI_Library:Init()
     Title.Parent = Header
     Title.ZIndex = 402
     
-    -- Sea Info
     local SeaLabel = Instance.new("TextLabel")
     SeaLabel.Text = "SEA " .. _G.Zenith_Data.CurrentSea
     SeaLabel.Size = UDim2.new(0, 70, 0, 35)
@@ -184,9 +174,7 @@ function UI_Library:Init()
     SeaCorner.CornerRadius = UDim.new(0, 8)
     SeaCorner.Parent = SeaLabel
     
-    print("✅ [UI] Header Created")
-    
-    -- 5. CLOSE BUTTON
+    -- CLOSE BUTTON
     local CloseButton = Instance.new("TextButton")
     CloseButton.Name = "CloseBtn"
     CloseButton.Text = "✕"
@@ -205,7 +193,7 @@ function UI_Library:Init()
     CloseCorner.CornerRadius = UDim.new(0, 8)
     CloseCorner.Parent = CloseButton
     
-    -- 6. SCROLLABLE CONTENT
+    -- CONTENT FRAME
     local ContentFrame = Instance.new("ScrollingFrame")
     ContentFrame.Name = "ContentArea"
     ContentFrame.Size = UDim2.new(1, -10, 1, -60)
@@ -226,9 +214,9 @@ function UI_Library:Init()
         ContentFrame.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y)
     end)
     
-    print("✅ [UI] Content Area Created")
+    print("✅ [UI] Header & Content Created")
     
-    -- 7. CREATE TOGGLE FUNCTION
+    -- CREATE TOGGLE FUNCTION
     local function CreateToggle(Parent, IconText, Text, ConfigTable, ConfigKey, Description)
         Description = Description or ""
         
@@ -325,7 +313,7 @@ function UI_Library:Init()
         DotCorner.CornerRadius = UDim.new(1, 0)
         DotCorner.Parent = SwitchDot
         
-        -- Click Handler
+        -- Click
         ToggleContainer.MouseButton1Click:Connect(function()
             ConfigTable[ConfigKey] = not ConfigTable[ConfigKey]
             PlaySound(SoundAssets.Toggle, 0.4)
@@ -353,7 +341,7 @@ function UI_Library:Init()
         end)
     end
     
-    -- 8. CREATE SECTION HEADER
+    -- CREATE SECTION
     local function CreateSection(Parent, Title)
         local SectionHeader = Instance.new("TextButton")
         SectionHeader.Name = Title .. "_Header"
@@ -389,8 +377,8 @@ function UI_Library:Init()
         end)
     end
     
-    -- 9. BUILD SECTIONS
-    print("\n📋 Building UI Sections...")
+    -- BUILD UI
+    print("[UI] Building sections...\n")
     
     CreateSection(ContentFrame, "🌾 FARMING SYSTEM")
     CreateToggle(ContentFrame, "🎯", "Auto Farm Level", _G.Zenith_Data.Config.Farm, "Level", "ฟาร์มเลเวลอัตโนมัติ")
@@ -418,9 +406,7 @@ function UI_Library:Init()
     CreateToggle(ContentFrame, "🎯", "Fruit Sniper", _G.Zenith_Data.Config.Misc, "FruitSniper", "ล็อคผลไม้")
     CreateToggle(ContentFrame, "⏰", "Anti-AFK", _G.Zenith_Data.Config.Misc, "AntiAFK", "ป้องกันเตะ")
     
-    print("✅ [UI] All sections created\n")
-    
-    -- 10. STATS DISPLAY
+    -- STATS
     local StatsFrame = Instance.new("Frame")
     StatsFrame.Size = UDim2.new(1, 0, 0, 40)
     StatsFrame.BackgroundColor3 = Theme.Surface
@@ -457,23 +443,18 @@ function UI_Library:Init()
         end
     end)
     
-    -- 11. MENU TOGGLE LOGIC (ส่วนสำคัญ - FIXED)
+    -- MENU TOGGLE
     local MenuOpen = false
     
     local function OpenMenu()
         if MenuOpen then return end
         MenuOpen = true
-        print("📂 [UI] Opening Menu...")
-        
         PlaySound(SoundAssets.Open, 0.5)
         MainFrame.Visible = true
-        
-        -- Slide in from right
         MainFrame.Position = UDim2.new(1.5, 0, 0.5, -360)
         CreateTween(MainFrame, 0.4, {
             Position = UDim2.new(0.5, -225, 0.5, -360)
         })
-        
         CreateTween(FloatingIcon, 0.3, {
             BackgroundColor3 = Theme.Secondary
         })
@@ -482,25 +463,29 @@ function UI_Library:Init()
     local function CloseMenu()
         if not MenuOpen then return end
         MenuOpen = false
-        print("📂 [UI] Closing Menu...")
-        
         PlaySound(SoundAssets.Close, 0.5)
-        
-        -- Slide out to right
         CreateTween(MainFrame, 0.4, {
             Position = UDim2.new(1.5, 0, 0.5, -360)
         })
-        
         task.wait(0.4)
         MainFrame.Visible = false
-        
         CreateTween(FloatingIcon, 0.3, {
             BackgroundColor3 = Theme.Primary
         })
     end
     
-    -- Icon Click Handler
+    -- Icon Click
     FloatingIcon.MouseButton1Click:Connect(function()
+        PulseEffect(FloatingIcon)
+        if MenuOpen then
+            CloseMenu()
+        else
+            OpenMenu()
+        end
+    end)
+    
+    -- Icon Touch
+    FloatingIcon.TouchTap:Connect(function()
         PulseEffect(FloatingIcon)
         if MenuOpen then
             CloseMenu()
@@ -543,7 +528,7 @@ function UI_Library:Init()
         })
     end)
     
-    -- 12. DRAG FUNCTIONALITY
+    -- DRAG
     local Dragging = false
     local DragStart = nil
     local DragPos = nil
@@ -574,17 +559,12 @@ function UI_Library:Init()
         end
     end)
     
-    -- COMPLETED
-    print("=" .. string.rep("=", 68) .. "=")
-    print("✅ [KANYAPAK SHOP V3] UI FULLY LOADED & READY")
-    print("=" .. string.rep("=", 68) .. "=")
-    print("📌 CONTROLS:")
-    print("   🛍️ Click Icon (Bottom-Right) = Toggle Menu")
-    print("   ✕ Click Close = Close Menu")
-    print("   🖱️ Drag Header = Move Menu")
-    print("=" .. string.rep("=", 68) .. "=\n")
-    
-    return MainFrame
+    print("✅ [UI] All toggles created")
+    print("✅ [UI] Menu functions ready\n")
+    print(string.rep("=", 60))
+    print("✅ KANYAPAK SHOP V3 - UI LOADED SUCCESSFULLY!")
+    print(string.rep("=", 60))
+    print("\n📍 Look for 🛍️ icon at bottom-right corner!\n")
 end
 
 return UI_Library
