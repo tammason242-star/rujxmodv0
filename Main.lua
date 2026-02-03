@@ -1,29 +1,32 @@
 --[[ 
-    ⭐ MAIN.LUA - KANYAPAK SHOP V3.0 ⭐
-    Complete Loader & Initialization System
-    All-in-One Script for Blox Fruits
+    ⭐ MAIN.LUA - MOBILE OPTIMIZED ⭐
+    Fixed for Tablet & Phone
 ]]
 
--- ═══════════════════════════════════════════════════════════════════════════
--- 📌 EXECUTION PROTECTION
--- ═══════════════════════════════════════════════════════════════════════════
-
 if _G.Kanyapak_Executed then
-    warn("[KANYAPAK] Script already running!")
+    warn("[KANYAPAK] Already running!")
     return
 end
 _G.Kanyapak_Executed = true
 
+print("\n[MOBILE] Loading Kanyapak V3.0...")
+
 -- ═══════════════════════════════════════════════════════════════════════════
--- 🎨 GLOBAL DATA INITIALIZATION
+-- DETECT DEVICE TYPE
 -- ═══════════════════════════════════════════════════════════════════════════
 
-print("\n" .. string.rep("=", 70))
-print("⭐ KANYAPAK SHOP V3.0 - LOADING...")
-print(string.rep("=", 70) .. "\n")
+local UserInputService = game:GetService("UserInputService")
+local IsMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+
+print("[DEVICE] Type: " .. (IsMobile and "MOBILE/TABLET" or "PC/MOUSE"))
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- INITIALIZE GLOBAL DATA
+-- ═══════════════════════════════════════════════════════════════════════════
 
 _G.Zenith_Data = {
     Version = "3.0",
+    IsMobile = IsMobile,
     LoadTime = tick(),
     
     Config = {
@@ -77,7 +80,7 @@ _G.Zenith_Data = {
             MacroSystem = true,
             VoiceCommand = false,
             AutoUpdate = true,
-            DebugMode = false
+            DebugMode = true
         },
         
         Advanced = {
@@ -85,9 +88,7 @@ _G.Zenith_Data = {
             MemoryOptimization = true,
             MultiThreading = true,
             CacheSystem = true,
-            PacketLogging = false,
-            NetworkOptimization = true,
-            UIScale = 1.0,
+            UIScale = IsMobile and 0.85 or 1.0,
             HideUI = false,
             DarkMode = true
         }
@@ -117,16 +118,18 @@ _G.Zenith_Data = {
     WorldType = "Unknown"
 }
 
+print("[CONFIG] Mobile optimized UI scale: " .. _G.Zenith_Data.Config.Advanced.UIScale)
+
 -- ═══════════════════════════════════════════════════════════════════════════
--- 🌍 WORLD DETECTION
+-- WORLD DETECTION
 -- ═══════════════════════════════════════════════════════════════════════════
 
 local function DetectWorld()
     local PlaceId = game.PlaceId
     local WorldData = {
-        [2753915549] = { Sea = 1, Name = "Sea 1 (Starting Island)", Type = "Starter" },
-        [4442272183] = { Sea = 2, Name = "Sea 2 (Paradise)", Type = "Intermediate" },
-        [7449423635] = { Sea = 3, Name = "Sea 3 (EndGame)", Type = "Advanced" }
+        [2753915549] = { Sea = 1, Name = "Sea 1", Type = "Starter" },
+        [4442272183] = { Sea = 2, Name = "Sea 2", Type = "Intermediate" },
+        [7449423635] = { Sea = 3, Name = "Sea 3", Type = "Advanced" }
     }
     
     local Data = WorldData[PlaceId]
@@ -134,163 +137,201 @@ local function DetectWorld()
         _G.Zenith_Data.CurrentSea = Data.Sea
         _G.Zenith_Data.WorldName = Data.Name
         _G.Zenith_Data.WorldType = Data.Type
-        print("✅ [WORLD] Detected: " .. Data.Name)
+        print("[WORLD] " .. Data.Name)
         return Data
-    else
-        print("⚠️ [WORLD] Unknown world detected (PlaceID: " .. PlaceId .. ")")
-        return nil
     end
+    return nil
 end
 
 DetectWorld()
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 📥 MODULE LOADER SYSTEM
+-- LOAD UI LIBRARY
 -- ═══════════════════════════════════════════════════════════════════════════
 
-local ModuleCache = {}
-local Repo = "https://raw.githubusercontent.com/tammason242-star/rujxmodv0/refs/heads/main/"
+print("\n[LOADING] UI Library...")
 
-local function LoadModule(FileName)
-    if ModuleCache[FileName] then
-        print("📦 [CACHE] Using cached: " .. FileName)
-        return ModuleCache[FileName]
-    end
-    
-    print("📥 [LOADER] Loading: " .. FileName .. "...")
-    
+local UI_Library = nil
+
+local function LoadUILibrary()
     local Success, Result = pcall(function()
-        return game:HttpGet(Repo .. FileName)
+        return game:HttpGet("https://raw.githubusercontent.com/tammason242-star/rujxmodv0/refs/heads/main/UI_Library.lua")
     end)
     
-    if Success and Result ~= "404: Not Found" then
+    if Success and Result ~= "404: Not Found" and Result ~= "" then
         local LoadFunc, Error = loadstring(Result)
-        
         if LoadFunc then
-            local Module = LoadFunc()
-            ModuleCache[FileName] = Module
-            print("✅ [LOADED] " .. FileName)
-            return Module
+            UI_Library = LoadFunc()
+            print("[SUCCESS] UI Library loaded")
+            return UI_Library
         else
-            warn("❌ [ERROR] Failed to parse " .. FileName .. ": " .. tostring(Error))
+            warn("[ERROR] UI Parse Error: " .. tostring(Error))
             return nil
         end
     else
-        warn("❌ [NETWORK] Failed to download " .. FileName)
+        warn("[ERROR] Could not download UI Library")
         return nil
     end
 end
 
--- ═══════════════════════════════════════════════════════════════════════════
--- 🚀 LOAD ALL MODULES
--- ═══════════════════════════════════════════════════════════════════════════
+UI_Library = LoadUILibrary()
 
-print("\n[PHASE 1] Loading Modules...\n")
-
-local UI_Library = LoadModule("UI_Library.lua")
-local Combat = LoadModule("Combat.lua")
-local Functions = LoadModule("Functions.lua")
-local Visuals = LoadModule("Visuals.lua")
+if not UI_Library then
+    warn("\n⚠️  CRITICAL: UI Library load failed!")
+    return
+end
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- ⚡ INITIALIZE ALL SYSTEMS
+-- INITIALIZE UI
 -- ═══════════════════════════════════════════════════════════════════════════
 
-print("\n[PHASE 2] Initializing Systems...\n")
+print("\n[INIT] Initializing UI System...")
 
 task.spawn(function()
-    if UI_Library and UI_Library.Init then
-        pcall(function() UI_Library:Init() end)
-    end
+    pcall(function()
+        if UI_Library and UI_Library.Init then
+            UI_Library:Init()
+        end
+    end)
 end)
 
+-- ═══════════════════════════════════════════════════════════════════════════
+-- LOAD OTHER MODULES
+-- ═══════════════════════════════════════════════════════════════════════════
+
+task.wait(2)
+
+print("[LOADING] Combat Module...")
+local Combat = loadstring(game:HttpGet("https://raw.githubusercontent.com/tammason242-star/rujxmodv0/refs/heads/main/Combat.lua"))()
+
+task.wait(0.5)
+print("[LOADING] Functions Module...")
+local Functions = loadstring(game:HttpGet("https://raw.githubusercontent.com/tammason242-star/rujxmodv0/refs/heads/main/Functions.lua"))()
+
+task.wait(0.5)
+print("[LOADING] Visuals Module...")
+local Visuals = loadstring(game:HttpGet("https://raw.githubusercontent.com/tammason242-star/rujxmodv0/refs/heads/main/Visuals.lua"))()
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- INITIALIZE ALL MODULES
+-- ═══════════════════════════════════════════════════════════════════════════
+
+print("\n[INIT] Starting all systems...\n")
+
 task.spawn(function()
-    task.wait(1)
     if Combat and Combat.Init then
         pcall(function() Combat:Init() end)
     end
 end)
 
 task.spawn(function()
-    task.wait(1)
+    task.wait(0.5)
     if Functions and Functions.Init then
         pcall(function() Functions:Init() end)
     end
 end)
 
 task.spawn(function()
-    task.wait(1)
+    task.wait(0.5)
     if Visuals and Visuals.Init then
         pcall(function() Visuals:Init() end)
     end
 end)
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 📊 HEARTBEAT MONITOR
+-- HEARTBEAT
 -- ═══════════════════════════════════════════════════════════════════════════
 
-local function StartHeartbeatMonitor()
-    game:GetService("RunService").Heartbeat:Connect(function()
-        if _G.Zenith_Data and _G.Zenith_Data.Statistics then
-            _G.Zenith_Data.Statistics.SessionTime = tick() - _G.Zenith_Data.Statistics.SessionStart
-        end
-    end)
-end
-
-StartHeartbeatMonitor()
-
--- ═══════════════════════════════════════════════════════════════════════════
--- 🔔 ANTI-AFK SYSTEM
--- ═══════════════════════════════════════════════════════════════════════════
-
-local function StartAntiAFK()
-    if _G.Zenith_Data.Config.Misc.AntiAFK then
-        local VirtualUser = game:GetService("VirtualUser")
-        game:GetService("Players").LocalPlayer.Idled:Connect(function()
-            VirtualUser:CaptureController()
-            VirtualUser:ClickButton2(Vector2.new())
-            print("⚡ [ANTI-AFK] System triggered!")
-        end)
-    end
-end
-
-StartAntiAFK()
-
--- ═══════════════════════════════════════════════════════════════════════════
--- 🎮 KEYBIND SYSTEM
--- ═══════════════════════════════════════════════════════════════════════════
-
-local UserInputService = game:GetService("UserInputService")
-
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    
-    -- F6: Toggle farming
-    if input.KeyCode == Enum.KeyCode.F6 then
-        _G.Zenith_Data.Config.Farm.Enabled = not _G.Zenith_Data.Config.Farm.Enabled
-        print("[KEYBIND] Farm toggled: " .. tostring(_G.Zenith_Data.Config.Farm.Enabled))
-    end
-    
-    -- F7: Toggle combat UI
-    if input.KeyCode == Enum.KeyCode.F7 then
-        local ScreenGui = game:GetService("CoreGui"):FindFirstChild("KanyapakShop_V3")
-        if ScreenGui then
-            local MainFrame = ScreenGui:FindFirstChild("KanyapakMainMenu")
-            if MainFrame then
-                MainFrame.Visible = not MainFrame.Visible
-            end
-        end
-    end
-    
-    -- F8: Reset statistics
-    if input.KeyCode == Enum.KeyCode.F8 then
-        _G.Zenith_Data.Statistics.MobsKilled = 0
-        print("[STATS] Statistics reset!")
+game:GetService("RunService").Heartbeat:Connect(function()
+    if _G.Zenith_Data and _G.Zenith_Data.Statistics then
+        _G.Zenith_Data.Statistics.SessionTime = tick() - _G.Zenith_Data.Statistics.SessionStart
     end
 end)
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 📢 COMPLETION NOTIFICATION
+-- ANTI-AFK
+-- ═══════════════════════════════════════════════════════════════════════════
+
+if _G.Zenith_Data.Config.Misc.AntiAFK then
+    local VirtualUser = game:GetService("VirtualUser")
+    game:GetService("Players").LocalPlayer.Idled:Connect(function()
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new())
+    end)
+end
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- MOBILE BUTTON CONTROLS
+-- ═══════════════════════════════════════════════════════════════════════════
+
+if IsMobile then
+    print("[MOBILE] Setting up touch controls...\n")
+    
+    -- Create mobile control buttons
+    local CoreGui = game:GetService("CoreGui")
+    local MobileControls = Instance.new("ScreenGui")
+    MobileControls.Name = "MobileControls"
+    MobileControls.Parent = CoreGui
+    MobileControls.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    
+    -- Toggle Farming Button (F6)
+    local FarmBtn = Instance.new("TextButton")
+    FarmBtn.Name = "FarmToggle"
+    FarmBtn.Text = "🌾 FARM"
+    FarmBtn.Size = UDim2.new(0, 70, 0, 50)
+    FarmBtn.Position = UDim2.new(0, 10, 1, -70)
+    FarmBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+    FarmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    FarmBtn.Font = Enum.Font.GothamBold
+    FarmBtn.TextSize = 12
+    FarmBtn.BorderSizePixel = 0
+    FarmBtn.Parent = MobileControls
+    FarmBtn.ZIndex = 300
+    
+    local FarmCorner = Instance.new("UICorner")
+    FarmCorner.CornerRadius = UDim.new(0, 8)
+    FarmCorner.Parent = FarmBtn
+    
+    FarmBtn.TouchTap:Connect(function()
+        _G.Zenith_Data.Config.Farm.Enabled = not _G.Zenith_Data.Config.Farm.Enabled
+        FarmBtn.BackgroundColor3 = _G.Zenith_Data.Config.Farm.Enabled and Color3.fromRGB(0, 200, 100) or Color3.fromRGB(200, 50, 50)
+        print("[FARM] Toggled: " .. (_G.Zenith_Data.Config.Farm.Enabled and "ON" or "OFF"))
+    end)
+    
+    -- Show Menu Button (F7)
+    local MenuBtn = Instance.new("TextButton")
+    MenuBtn.Name = "MenuToggle"
+    MenuBtn.Text = "☰ MENU"
+    MenuBtn.Size = UDim2.new(0, 70, 0, 50)
+    MenuBtn.Position = UDim2.new(0, 90, 1, -70)
+    MenuBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+    MenuBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MenuBtn.Font = Enum.Font.GothamBold
+    MenuBtn.TextSize = 12
+    MenuBtn.BorderSizePixel = 0
+    MenuBtn.Parent = MobileControls
+    MenuBtn.ZIndex = 300
+    
+    local MenuCorner = Instance.new("UICorner")
+    MenuCorner.CornerRadius = UDim.new(0, 8)
+    MenuCorner.Parent = MenuBtn
+    
+    MenuBtn.TouchTap:Connect(function()
+        local ScreenGui = CoreGui:FindFirstChild("KanyapakShop_V3")
+        if ScreenGui then
+            local MainMenu = ScreenGui:FindFirstChild("KanyapakMainMenu")
+            if MainMenu then
+                MainMenu.Visible = not MainMenu.Visible
+                print("[MENU] " .. (MainMenu.Visible and "SHOWN" or "HIDDEN"))
+            end
+        end
+    end)
+    
+    print("[MOBILE] Control buttons added at bottom-left")
+end
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- COMPLETION
 -- ═══════════════════════════════════════════════════════════════════════════
 
 task.wait(3)
@@ -298,58 +339,61 @@ task.wait(3)
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "🎉 KANYAPAK V3.0",
-        Text = "All systems loaded successfully! Use F7 to toggle UI",
-        Duration = 5,
-        Icon = "rbxassetid://12221969"
+        Text = IsMobile and "Ready! Use 🌾 FARM & ☰ MENU buttons" or "Ready! Click 🛍️ icon or F7",
+        Duration = 5
     })
 end)
 
--- ═══════════════════════════════════════════════════════════════════════════
--- 📊 FINAL STARTUP INFO
--- ═══════════════════════════════════════════════════════════════════════════
+print("\n" .. string.rep("=", 60))
+print("✅ KANYAPAK V3.0 - LOADED")
+print(string.rep("=", 60))
 
-print("\n" .. string.rep("=", 70))
-print("✅ KANYAPAK SHOP V3.0 - FULLY LOADED")
-print(string.rep("=", 70))
-print("\n📌 QUICK COMMANDS:")
-print("   F6 = Toggle Farming")
-print("   F7 = Toggle UI Panel")
-print("   F8 = Reset Statistics")
-print("\n🌍 WORLD INFO:")
-print("   Sea: " .. _G.Zenith_Data.CurrentSea)
-print("   Name: " .. _G.Zenith_Data.WorldName)
-print("   Type: " .. _G.Zenith_Data.WorldType)
-print("\n⚙️ MODULES LOADED:")
-print("   ✅ UI Library")
-print("   ✅ Combat System")
-print("   ✅ Navigation System")
-print("   ✅ Visual System")
-print("\n🎯 FEATURES:")
-print("   • Auto Farming")
-print("   • Smart Navigation")
-print("   • Combat System")
-print("   • Visual Enhancements")
-print("   • Statistics Tracking")
-print("   • Anti-AFK Protection")
-print(string.rep("=", 70) .. "\n")
+if IsMobile then
+    print("\n📱 MOBILE CONTROLS:")
+    print("   🌾 = Toggle Farming (bottom-left)")
+    print("   ☰ = Show Menu (bottom-left)")
+    print("   Or tap 🛍️ icon (bottom-right)")
+else
+    print("\n🖱️  CONTROLS:")
+    print("   🛍️ = Tap icon to toggle menu")
+    print("   F6 = Toggle Farming")
+    print("   F7 = Toggle Menu")
+end
 
--- ═══════════════════════════════════════════════════════════════════════════
--- 🔧 ERROR HANDLING & SAFETY
--- ═══════════════════════════════════════════════════════════════════════════
+print("\n" .. string.rep("=", 60) .. "\n")
+และอัปเดต UI_Library.lua ตรงส่วนนี้:
+เปลี่ยนบรรทัดที่ 73-75:
+local FloatingIcon = Instance.new("TextButton")  -- เปลี่ยนจาก Frame เป็น TextButton
+FloatingIcon.Name = "FloatingShopIcon"
+FloatingIcon.Size = UDim2.new(0, 65, 0, 65)
+FloatingIcon.Position = UDim2.new(1, -85, 1, -95)  -- ตรวจสอบว่าไม่ติด UI เกม
+FloatingIcon.BackgroundColor3 = Theme.Primary
+FloatingIcon.BorderSizePixel = 0
+FloatingIcon.Text = "🛍️"
+FloatingIcon.TextSize = 32
+FloatingIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+FloatingIcon.Font = Enum.Font.GothamBold
+FloatingIcon.Parent = ScreenGui
+FloatingIcon.ZIndex = 500
+FloatingIcon.CanQuery = true
+FloatingIcon.AutoButtonColor = false
 
-game:GetService("Players").LocalPlayer.CharacterAdded:Connect(function(Character)
-    print("[CHARACTER] Respawned - Reinitializing systems...")
-    task.wait(1)
-    if Combat and Combat.Init then
-        pcall(function() Combat:Init() end)
+-- เพิ่ม Touch Input
+FloatingIcon.TouchTap:Connect(function()
+    PulseEffect(FloatingIcon)
+    if MenuOpen then
+        CloseMenu()
+    else
+        OpenMenu()
     end
 end)
 
--- Handle script errors gracefully
-game:GetService("RunService").Heartbeat:Connect(function()
-    pcall(function()
-        -- Any heartbeat critical operations go here
-    end)
+-- เก็บ MouseButton1Click ไว้ด้วย
+FloatingIcon.MouseButton1Click:Connect(function()
+    PulseEffect(FloatingIcon)
+    if MenuOpen then
+        CloseMenu()
+    else
+        OpenMenu()
+    end
 end)
-
-print("✨ KANYAPAK SHOP V3.0 is now ready to use!")
