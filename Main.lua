@@ -1,399 +1,501 @@
---[[ 
-    ⭐ MAIN.LUA - MOBILE OPTIMIZED ⭐
-    Fixed for Tablet & Phone
-]]
-
-if _G.Kanyapak_Executed then
-    warn("[KANYAPAK] Already running!")
-    return
-end
+if _G.Kanyapak_Executed then return end
 _G.Kanyapak_Executed = true
 
-print("\n[MOBILE] Loading Kanyapak V3.0...")
+print("\n[KANYAPAK V3.0] Loading...\n")
 
--- ═══════════════════════════════════════════════════════════════════════════
--- DETECT DEVICE TYPE
--- ═══════════════════════════════════════════════════════════════════════════
+local UIS = game:GetService("UserInputService")
+local TS = game:GetService("TweenService")
+local RS = game:GetService("RunService")
+local LocalPlayer = game:GetService("Players").LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local UserInputService = game:GetService("UserInputService")
-local IsMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+local IsMobile = UIS.TouchEnabled and not UIS.MouseEnabled
 
-print("[DEVICE] Type: " .. (IsMobile and "MOBILE/TABLET" or "PC/MOUSE"))
-
--- ═══════════════════════════════════════════════════════════════════════════
--- INITIALIZE GLOBAL DATA
--- ═══════════════════════════════════════════════════════════════════════════
-
+-- GLOBAL DATA
 _G.Zenith_Data = {
     Version = "3.0",
     IsMobile = IsMobile,
-    LoadTime = tick(),
-    
-    Config = {
-        Farm = {
-            Enabled = true,
-            Level = true,
-            Mastery = true,
-            Tool = "Melee",
-            BringMob = true,
-            Distance = 25,
-            AutoSell = false,
-            SellInterval = 300,
-            SmartTargeting = true,
-            UseAbilities = true,
-            AbilityDelay = 0.5
-        },
-        
-        Player = {
-            Speed = 25,
-            Jump = 60,
-            InfJump = false,
-            NoClip = false,
-            AntiStun = true,
-            AntiKnockback = false,
-            WallWalk = false,
-            FlightMode = false,
-            FlightSpeed = 30,
-            SlideMode = true,
-            Godmode = false
-        },
-        
-        Visuals = {
-            FruitESP = false,
-            FruitDistance = 9999,
-            PlayerESP = false,
-            ChestESP = false,
-            IslandESP = false,
-            BossESP = false,
-            FullBright = false,
-            NoFog = false,
-            UndergroundVision = false,
-            ESPDistance = 5000
-        },
-        
-        Misc = {
-            AutoRaid = false,
-            AutoNewWorld = false,
-            FruitSniper = false,
-            AntiAFK = true,
-            AutoRejoin = false,
-            MacroSystem = true,
-            VoiceCommand = false,
-            AutoUpdate = true,
-            DebugMode = true
-        },
-        
-        Advanced = {
-            RequestsPerSecond = 50,
-            MemoryOptimization = true,
-            MultiThreading = true,
-            CacheSystem = true,
-            UIScale = IsMobile and 0.85 or 1.0,
-            HideUI = false,
-            DarkMode = true
-        }
-    },
-    
-    Statistics = {
-        SessionTime = 0,
-        MobsKilled = 0,
-        ExpGained = 0,
-        MasteryGained = 0,
-        ItemsCollected = 0,
-        DistanceTraveled = 0,
-        AbilitiesUsed = 0,
-        SessionStart = tick()
-    },
-    
-    Cache = {
-        MobLocations = {},
-        FruitLocations = {},
-        PlayerData = {},
-        IslandData = {},
-        LastUpdate = 0
-    },
-    
     CurrentSea = 1,
-    WorldName = "Unknown",
-    WorldType = "Unknown"
+    Config = {
+        Farm = {Enabled=true, Level=true, Mastery=true, Tool="Melee", BringMob=true, Distance=25, AutoSell=false, UseAbilities=true, AbilityDelay=0.5},
+        Player = {Speed=25, Jump=60, InfJump=false, NoClip=false, AntiStun=true, AntiKnockback=false, FlightMode=false, FlightSpeed=30},
+        Visuals = {FruitESP=false, PlayerESP=false, ChestESP=false, FullBright=false, IslandESP=false},
+        Misc = {AutoRaid=false, AutoNewWorld=false, FruitSniper=false, AntiAFK=true},
+        Advanced = {DebugMode=true}
+    },
+    Statistics = {SessionTime=0, MobsKilled=0, ExpGained=0, SessionStart=tick()}
 }
 
-print("[CONFIG] Mobile optimized UI scale: " .. _G.Zenith_Data.Config.Advanced.UIScale)
+-- THEME
+local Theme = {
+    Primary = Color3.fromRGB(0, 255, 127),
+    Secondary = Color3.fromRGB(255, 85, 127),
+    Background = Color3.fromRGB(15, 15, 15),
+    Surface = Color3.fromRGB(25, 25, 25),
+    Surface2 = Color3.fromRGB(35, 35, 35),
+    Text = Color3.fromRGB(220, 220, 220),
+    TextDark = Color3.fromRGB(150, 150, 150),
+    Accent = Color3.fromRGB(0, 150, 255),
+    Success = Color3.fromRGB(0, 255, 127),
+    Warning = Color3.fromRGB(255, 165, 0),
+    Danger = Color3.fromRGB(255, 50, 50)
+}
 
--- ═══════════════════════════════════════════════════════════════════════════
--- WORLD DETECTION
--- ═══════════════════════════════════════════════════════════════════════════
-
-local function DetectWorld()
-    local PlaceId = game.PlaceId
-    local WorldData = {
-        [2753915549] = { Sea = 1, Name = "Sea 1", Type = "Starter" },
-        [4442272183] = { Sea = 2, Name = "Sea 2", Type = "Intermediate" },
-        [7449423635] = { Sea = 3, Name = "Sea 3", Type = "Advanced" }
-    }
-    
-    local Data = WorldData[PlaceId]
-    if Data then
-        _G.Zenith_Data.CurrentSea = Data.Sea
-        _G.Zenith_Data.WorldName = Data.Name
-        _G.Zenith_Data.WorldType = Data.Type
-        print("[WORLD] " .. Data.Name)
-        return Data
-    end
-    return nil
+-- TWEEN HELPER
+local function Tween(Obj, Dur, Props)
+    if not Obj then return nil end
+    local T = TS:Create(Obj, TweenInfo.new(Dur, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), Props)
+    T:Play()
+    return T
 end
 
-DetectWorld()
+-- CREATE SCREENGUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "KanyapakShop_V3"
+ScreenGui.Parent = PlayerGui
+ScreenGui.ResetOnSpawn = false
+print("[UI] ScreenGui created")
 
--- ═══════════════════════════════════════════════════════════════════════════
--- LOAD UI LIBRARY
--- ═══════════════════════════════════════════════════════════════════════════
+-- FLOATING ICON
+local Icon = Instance.new("TextButton")
+Icon.Name = "FloatingShopIcon"
+Icon.Size = UDim2.new(0, 70, 0, 70)
+Icon.Position = UDim2.new(1, -90, 1, -100)
+Icon.BackgroundColor3 = Theme.Primary
+Icon.BorderSizePixel = 0
+Icon.Text = "🛍️"
+Icon.TextSize = 35
+Icon.TextColor3 = Color3.fromRGB(255, 255, 255)
+Icon.Font = Enum.Font.GothamBold
+Icon.AutoButtonColor = false
+Icon.Parent = ScreenGui
+Icon.ZIndex = 500
 
-print("\n[LOADING] UI Library...")
+local IconCorner = Instance.new("UICorner")
+IconCorner.CornerRadius = UDim.new(1, 0)
+IconCorner.Parent = Icon
 
-local UI_Library = nil
+local IconStroke = Instance.new("UIStroke")
+IconStroke.Color = Theme.Secondary
+IconStroke.Thickness = 3
+IconStroke.Parent = Icon
 
-local function LoadUILibrary()
-    local Success, Result = pcall(function()
-        return game:HttpGet("https://raw.githubusercontent.com/tammason242-star/rujxmodv0/refs/heads/main/UI_Library.lua")
+print("[UI] Floating icon created")
+
+-- MAIN MENU FRAME
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "KanyapakMainMenu"
+MainFrame.Size = UDim2.new(0, 450, 0, 700)
+MainFrame.Position = UDim2.new(0.5, -225, 0.5, -350)
+MainFrame.BackgroundColor3 = Theme.Background
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+MainFrame.Visible = false
+MainFrame.ZIndex = 400
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Theme.Primary
+MainStroke.Thickness = 3
+MainStroke.Parent = MainFrame
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 15)
+MainCorner.Parent = MainFrame
+
+print("[UI] Main frame created")
+
+-- HEADER
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 50)
+Header.BackgroundColor3 = Theme.Surface
+Header.BorderSizePixel = 0
+Header.Parent = MainFrame
+Header.ZIndex = 401
+
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(0, 15)
+HeaderCorner.Parent = Header
+
+local Title = Instance.new("TextLabel")
+Title.Text = "⭐ KANYAPAK V3"
+Title.Size = UDim2.new(0, 300, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = 1
+Title.TextColor3 = Theme.Primary
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.Parent = Header
+Title.ZIndex = 402
+
+local SeaLabel = Instance.new("TextLabel")
+SeaLabel.Text = "SEA 1"
+SeaLabel.Size = UDim2.new(0, 70, 0, 35)
+SeaLabel.Position = UDim2.new(1, -75, 0, 7)
+SeaLabel.BackgroundColor3 = Theme.Accent
+SeaLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
+SeaLabel.Font = Enum.Font.GothamBold
+SeaLabel.TextSize = 12
+SeaLabel.BorderSizePixel = 0
+SeaLabel.Parent = Header
+SeaLabel.ZIndex = 402
+
+local SeaCorner = Instance.new("UICorner")
+SeaCorner.CornerRadius = UDim.new(0, 8)
+SeaCorner.Parent = SeaLabel
+
+-- CLOSE BUTTON
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Text = "✕"
+CloseBtn.Size = UDim2.new(0, 40, 0, 40)
+CloseBtn.Position = UDim2.new(1, -45, 0, 5)
+CloseBtn.BackgroundColor3 = Theme.Danger
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 18
+CloseBtn.BorderSizePixel = 0
+CloseBtn.AutoButtonColor = false
+CloseBtn.Parent = Header
+CloseBtn.ZIndex = 402
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = CloseBtn
+
+-- CONTENT SCROLLFRAME
+local Content = Instance.new("ScrollingFrame")
+Content.Size = UDim2.new(1, -10, 1, -60)
+Content.Position = UDim2.new(0, 5, 0, 55)
+Content.BackgroundTransparency = 1
+Content.ScrollBarThickness = 3
+Content.ScrollBarImageColor3 = Theme.Primary
+Content.CanvasSize = UDim2.new(0, 0, 0, 0)
+Content.Parent = MainFrame
+Content.ZIndex = 401
+
+local Layout = Instance.new("UIListLayout")
+Layout.Padding = UDim.new(0, 8)
+Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+Layout.Parent = Content
+
+Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    Content.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y)
+end)
+
+print("[UI] Content area created")
+
+-- CREATE TOGGLE FUNCTION
+local function CreateToggle(Parent, Icon, Text, Config, Key, Desc)
+    Desc = Desc or ""
+    
+    local ToggleBtn = Instance.new("TextButton")
+    ToggleBtn.Size = UDim2.new(0, 420, 0, 50)
+    ToggleBtn.BackgroundColor3 = Theme.Surface2
+    ToggleBtn.Text = ""
+    ToggleBtn.AutoButtonColor = false
+    ToggleBtn.Parent = Parent
+    ToggleBtn.ZIndex = 402
+    
+    local ToggleCorner = Instance.new("UICorner")
+    ToggleCorner.CornerRadius = UDim.new(0, 8)
+    ToggleCorner.Parent = ToggleBtn
+    
+    local ToggleStroke = Instance.new("UIStroke")
+    ToggleStroke.Color = Theme.TextDark
+    ToggleStroke.Thickness = 1
+    ToggleStroke.Transparency = 0.7
+    ToggleStroke.Parent = ToggleBtn
+    
+    -- Icon
+    local IconLabel = Instance.new("TextLabel")
+    IconLabel.Text = Icon
+    IconLabel.Size = UDim2.new(0, 40, 0, 40)
+    IconLabel.Position = UDim2.new(0, 8, 0.5, -20)
+    IconLabel.BackgroundColor3 = Theme.Primary
+    IconLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
+    IconLabel.Font = Enum.Font.GothamBold
+    IconLabel.TextSize = 20
+    IconLabel.BorderSizePixel = 0
+    IconLabel.Parent = ToggleBtn
+    IconLabel.ZIndex = 403
+    
+    local IconCorner2 = Instance.new("UICorner")
+    IconCorner2.CornerRadius = UDim.new(0, 6)
+    IconCorner2.Parent = IconLabel
+    
+    -- Info Container
+    local Info = Instance.new("Frame")
+    Info.Size = UDim2.new(0, 280, 1, 0)
+    Info.Position = UDim2.new(0, 55, 0, 0)
+    Info.BackgroundTransparency = 1
+    Info.Parent = ToggleBtn
+    Info.ZIndex = 403
+    
+    local Label = Instance.new("TextLabel")
+    Label.Text = Text
+    Label.Size = UDim2.new(1, 0, 0, 25)
+    Label.Position = UDim2.new(0, 0, 0, 5)
+    Label.BackgroundTransparency = 1
+    Label.TextColor3 = Theme.Text
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Font = Enum.Font.GothamBold
+    Label.TextSize = 13
+    Label.Parent = Info
+    Label.ZIndex = 403
+    
+    local DescLabel = Instance.new("TextLabel")
+    DescLabel.Text = Desc
+    DescLabel.Size = UDim2.new(1, 0, 0, 18)
+    DescLabel.Position = UDim2.new(0, 0, 0, 28)
+    DescLabel.BackgroundTransparency = 1
+    DescLabel.TextColor3 = Theme.TextDark
+    DescLabel.TextXAlignment = Enum.TextXAlignment.Left
+    DescLabel.Font = Enum.Font.Gotham
+    DescLabel.TextSize = 11
+    DescLabel.Parent = Info
+    DescLabel.ZIndex = 403
+    
+    -- Toggle Switch
+    local Switch = Instance.new("Frame")
+    Switch.Size = UDim2.new(0, 50, 0, 28)
+    Switch.Position = UDim2.new(1, -60, 0.5, -14)
+    Switch.BackgroundColor3 = Config[Key] and Theme.Success or Theme.TextDark
+    Switch.BorderSizePixel = 0
+    Switch.Parent = ToggleBtn
+    Switch.ZIndex = 403
+    
+    local SwitchCorner = Instance.new("UICorner")
+    SwitchCorner.CornerRadius = UDim.new(0, 14)
+    SwitchCorner.Parent = Switch
+    
+    local Dot = Instance.new("Frame")
+    Dot.Size = UDim2.new(0, 24, 0, 24)
+    Dot.Position = Config[Key] and UDim2.new(0, 23, 0.5, -12) or UDim2.new(0, 2, 0.5, -12)
+    Dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Dot.BorderSizePixel = 0
+    Dot.Parent = Switch
+    Dot.ZIndex = 404
+    
+    local DotCorner = Instance.new("UICorner")
+    DotCorner.CornerRadius = UDim.new(1, 0)
+    DotCorner.Parent = Dot
+    
+    -- Click Event
+    ToggleBtn.MouseButton1Click:Connect(function()
+        Config[Key] = not Config[Key]
+        Tween(Switch, 0.3, {BackgroundColor3 = Config[Key] and Theme.Success or Theme.TextDark})
+        Tween(Dot, 0.3, {Position = Config[Key] and UDim2.new(0, 23, 0.5, -12) or UDim2.new(0, 2, 0.5, -12)})
+        print("[TOGGLE] " .. Text .. ": " .. (Config[Key] and "✅ ON" or "❌ OFF"))
     end)
     
-    if Success and Result ~= "404: Not Found" and Result ~= "" then
-        local LoadFunc, Error = loadstring(Result)
-        if LoadFunc then
-            UI_Library = LoadFunc()
-            print("[SUCCESS] UI Library loaded")
-            return UI_Library
-        else
-            warn("[ERROR] UI Parse Error: " .. tostring(Error))
-            return nil
-        end
-    else
-        warn("[ERROR] Could not download UI Library")
-        return nil
-    end
-end
-
-UI_Library = LoadUILibrary()
-
-if not UI_Library then
-    warn("\n⚠️  CRITICAL: UI Library load failed!")
-    return
-end
-
--- ═══════════════════════════════════════════════════════════════════════════
--- INITIALIZE UI
--- ═══════════════════════════════════════════════════════════════════════════
-
-print("\n[INIT] Initializing UI System...")
-
-task.spawn(function()
-    pcall(function()
-        if UI_Library and UI_Library.Init then
-            UI_Library:Init()
-        end
+    ToggleBtn.MouseEnter:Connect(function()
+        Tween(ToggleBtn, 0.2, {BackgroundColor3 = Theme.Surface})
     end)
-end)
+    
+    ToggleBtn.MouseLeave:Connect(function()
+        Tween(ToggleBtn, 0.2, {BackgroundColor3 = Theme.Surface2})
+    end)
+end
 
--- ═══════════════════════════════════════════════════════════════════════════
--- LOAD OTHER MODULES
--- ═══════════════════════════════════════════════════════════════════════════
+-- CREATE SECTION FUNCTION
+local function CreateSection(Parent, Title)
+    local Section = Instance.new("TextButton")
+    Section.Size = UDim2.new(0, 420, 0, 35)
+    Section.BackgroundColor3 = Theme.Accent
+    Section.Text = ""
+    Section.AutoButtonColor = false
+    Section.Parent = Parent
+    Section.ZIndex = 402
+    
+    local SectionCorner = Instance.new("UICorner")
+    SectionCorner.CornerRadius = UDim.new(0, 8)
+    SectionCorner.Parent = Section
+    
+    local SectionTitle = Instance.new("TextLabel")
+    SectionTitle.Text = Title
+    SectionTitle.Size = UDim2.new(1, -30, 1, 0)
+    SectionTitle.Position = UDim2.new(0, 10, 0, 0)
+    SectionTitle.BackgroundTransparency = 1
+    SectionTitle.TextColor3 = Color3.fromRGB(0, 0, 0)
+    SectionTitle.Font = Enum.Font.GothamBold
+    SectionTitle.TextSize = 13
+    SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
+    SectionTitle.Parent = Section
+    SectionTitle.ZIndex = 403
+    
+    Section.MouseEnter:Connect(function()
+        Tween(Section, 0.2, {BackgroundColor3 = Theme.Primary})
+    end)
+    
+    Section.MouseLeave:Connect(function()
+        Tween(Section, 0.2, {BackgroundColor3 = Theme.Accent})
+    end)
+end
 
-task.wait(2)
+-- BUILD UI
+print("[UI] Building sections...\n")
 
-print("[LOADING] Combat Module...")
-local Combat = loadstring(game:HttpGet("https://raw.githubusercontent.com/tammason242-star/rujxmodv0/refs/heads/main/Combat.lua"))()
+CreateSection(Content, "🌾 FARMING")
+CreateToggle(Content, "🎯", "Auto Farm Level", _G.Zenith_Data.Config.Farm, "Level", "ฟาร์มเลเวล")
+CreateToggle(Content, "⚔️", "Auto Mastery", _G.Zenith_Data.Config.Farm, "Mastery", "ฟาร์มอาวุธ")
+CreateToggle(Content, "🧲", "Bring Mobs", _G.Zenith_Data.Config.Farm, "BringMob", "รวมมอนสเตอร์")
+CreateToggle(Content, "💰", "Auto Sell", _G.Zenith_Data.Config.Farm, "AutoSell", "ขายอัตโนมัติ")
 
-task.wait(0.5)
-print("[LOADING] Functions Module...")
-local Functions = loadstring(game:HttpGet("https://raw.githubusercontent.com/tammason242-star/rujxmodv0/refs/heads/main/Functions.lua"))()
+CreateSection(Content, "👤 PLAYER")
+CreateToggle(Content, "🚀", "Infinite Jump", _G.Zenith_Data.Config.Player, "InfJump", "กระโดดไม่จำกัด")
+CreateToggle(Content, "👻", "No Clip", _G.Zenith_Data.Config.Player, "NoClip", "ผ่านผนัง")
+CreateToggle(Content, "🛡️", "Anti-Stun", _G.Zenith_Data.Config.Player, "AntiStun", "ป้องกันสตั้น")
+CreateToggle(Content, "🪂", "Flight Mode", _G.Zenith_Data.Config.Player, "FlightMode", "บินได้")
 
-task.wait(0.5)
-print("[LOADING] Visuals Module...")
-local Visuals = loadstring(game:HttpGet("https://raw.githubusercontent.com/tammason242-star/rujxmodv0/refs/heads/main/Visuals.lua"))()
+CreateSection(Content, "👁️ VISUALS")
+CreateToggle(Content, "🍎", "Fruit ESP", _G.Zenith_Data.Config.Visuals, "FruitESP", "มองผลไม้")
+CreateToggle(Content, "👥", "Player ESP", _G.Zenith_Data.Config.Visuals, "PlayerESP", "มองผู้เล่น")
+CreateToggle(Content, "💎", "Chest ESP", _G.Zenith_Data.Config.Visuals, "ChestESP", "มองหีบ")
+CreateToggle(Content, "🌞", "Full Bright", _G.Zenith_Data.Config.Visuals, "FullBright", "สว่างเต็ม")
+CreateToggle(Content, "🗺️", "Island ESP", _G.Zenith_Data.Config.Visuals, "IslandESP", "แสดงเกาะ")
 
--- ═══════════════════════════════════════════════════════════════════════════
--- INITIALIZE ALL MODULES
--- ═══════════════════════════════════════════════════════════════════════════
+CreateSection(Content, "✨ FEATURES")
+CreateToggle(Content, "🎪", "Auto Raid", _G.Zenith_Data.Config.Misc, "AutoRaid", "Raid อัตโนมัติ")
+CreateToggle(Content, "🌍", "Auto New World", _G.Zenith_Data.Config.Misc, "AutoNewWorld", "เปลี่ยนโลก")
+CreateToggle(Content, "⏰", "Anti-AFK", _G.Zenith_Data.Config.Misc, "AntiAFK", "ป้องกันเตะ")
 
-print("\n[INIT] Starting all systems...\n")
+-- STATS FRAME
+local Stats = Instance.new("Frame")
+Stats.Size = UDim2.new(1, 0, 0, 40)
+Stats.BackgroundColor3 = Theme.Surface
+Stats.BorderSizePixel = 0
+Stats.Parent = MainFrame
+Stats.Position = UDim2.new(0, 0, 1, -40)
+Stats.ZIndex = 401
 
-task.spawn(function()
-    if Combat and Combat.Init then
-        pcall(function() Combat:Init() end)
+local StatsCorner = Instance.new("UICorner")
+StatsCorner.CornerRadius = UDim.new(0, 15)
+StatsCorner.Parent = Stats
+
+local StatsText = Instance.new("TextLabel")
+StatsText.Text = "⏱️ 0s | 🎯 0 Mobs | ⭐ 0 Exp"
+StatsText.Size = UDim2.new(1, -20, 1, 0)
+StatsText.Position = UDim2.new(0, 10, 0, 0)
+StatsText.BackgroundTransparency = 1
+StatsText.TextColor3 = Theme.Primary
+StatsText.Font = Enum.Font.Gotham
+StatsText.TextSize = 11
+StatsText.TextXAlignment = Enum.TextXAlignment.Left
+StatsText.Parent = Stats
+StatsText.ZIndex = 402
+
+RS.Heartbeat:Connect(function()
+    if _G.Zenith_Data.Statistics then
+        local Time = math.floor(_G.Zenith_Data.Statistics.SessionTime)
+        StatsText.Text = string.format("⏱️ %ds | 🎯 %d Mobs | ⭐ %d Exp", Time, _G.Zenith_Data.Statistics.MobsKilled, _G.Zenith_Data.Statistics.ExpGained)
     end
 end)
 
-task.spawn(function()
-    task.wait(0.5)
-    if Functions and Functions.Init then
-        pcall(function() Functions:Init() end)
+print("[UI] All toggles created\n")
+
+-- MENU TOGGLE
+local MenuOpen = false
+
+local function OpenMenu()
+    if MenuOpen then return end
+    MenuOpen = true
+    MainFrame.Visible = true
+    MainFrame.Position = UDim2.new(1.5, 0, 0.5, -350)
+    Tween(MainFrame, 0.4, {Position = UDim2.new(0.5, -225, 0.5, -350)})
+    Tween(Icon, 0.3, {BackgroundColor3 = Theme.Secondary})
+end
+
+local function CloseMenu()
+    if not MenuOpen then return end
+    MenuOpen = false
+    Tween(MainFrame, 0.4, {Position = UDim2.new(1.5, 0, 0.5, -350)})
+    task.wait(0.4)
+    MainFrame.Visible = false
+    Tween(Icon, 0.3, {BackgroundColor3 = Theme.Primary})
+end
+
+-- ICON CLICK
+Icon.MouseButton1Click:Connect(function()
+    if MenuOpen then CloseMenu() else OpenMenu() end
+end)
+
+Icon.TouchTap:Connect(function()
+    if MenuOpen then CloseMenu() else OpenMenu() end
+end)
+
+-- ICON HOVER
+Icon.MouseEnter:Connect(function()
+    Tween(Icon, 0.2, {Size = UDim2.new(0, 80, 0, 80)})
+end)
+
+Icon.MouseLeave:Connect(function()
+    if not MenuOpen then
+        Tween(Icon, 0.2, {Size = UDim2.new(0, 70, 0, 70)})
     end
 end)
 
-task.spawn(function()
-    task.wait(0.5)
-    if Visuals and Visuals.Init then
-        pcall(function() Visuals:Init() end)
+-- CLOSE BUTTON
+CloseBtn.MouseButton1Click:Connect(function()
+    CloseMenu()
+end)
+
+CloseBtn.MouseEnter:Connect(function()
+    Tween(CloseBtn, 0.2, {BackgroundColor3 = Theme.Warning})
+end)
+
+CloseBtn.MouseLeave:Connect(function()
+    Tween(CloseBtn, 0.2, {BackgroundColor3 = Theme.Danger})
+end)
+
+-- DRAG FUNCTION
+local Dragging = false
+local DragStart = nil
+local DragPos = nil
+
+Header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        Dragging = true
+        DragStart = input.Position
+        DragPos = MainFrame.Position
     end
 end)
 
--- ═══════════════════════════════════════════════════════════════════════════
+Header.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        Dragging = false
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if Dragging and DragStart and DragPos then
+        local Delta = input.Position - DragStart
+        MainFrame.Position = UDim2.new(DragPos.X.Scale, DragPos.X.Offset + Delta.X, DragPos.Y.Scale, DragPos.Y.Offset + Delta.Y)
+    end
+end)
+
 -- HEARTBEAT
--- ═══════════════════════════════════════════════════════════════════════════
-
-game:GetService("RunService").Heartbeat:Connect(function()
+RS.Heartbeat:Connect(function()
     if _G.Zenith_Data and _G.Zenith_Data.Statistics then
         _G.Zenith_Data.Statistics.SessionTime = tick() - _G.Zenith_Data.Statistics.SessionStart
     end
 end)
 
--- ═══════════════════════════════════════════════════════════════════════════
 -- ANTI-AFK
--- ═══════════════════════════════════════════════════════════════════════════
-
 if _G.Zenith_Data.Config.Misc.AntiAFK then
     local VirtualUser = game:GetService("VirtualUser")
-    game:GetService("Players").LocalPlayer.Idled:Connect(function()
+    LocalPlayer.Idled:Connect(function()
         VirtualUser:CaptureController()
         VirtualUser:ClickButton2(Vector2.new())
     end)
 end
 
--- ═══════════════════════════════════════════════════════════════════════════
--- MOBILE BUTTON CONTROLS
--- ═══════════════════════════════════════════════════════════════════════════
-
-if IsMobile then
-    print("[MOBILE] Setting up touch controls...\n")
-    
-    -- Create mobile control buttons
-    local CoreGui = game:GetService("CoreGui")
-    local MobileControls = Instance.new("ScreenGui")
-    MobileControls.Name = "MobileControls"
-    MobileControls.Parent = CoreGui
-    MobileControls.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    
-    -- Toggle Farming Button (F6)
-    local FarmBtn = Instance.new("TextButton")
-    FarmBtn.Name = "FarmToggle"
-    FarmBtn.Text = "🌾 FARM"
-    FarmBtn.Size = UDim2.new(0, 70, 0, 50)
-    FarmBtn.Position = UDim2.new(0, 10, 1, -70)
-    FarmBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-    FarmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    FarmBtn.Font = Enum.Font.GothamBold
-    FarmBtn.TextSize = 12
-    FarmBtn.BorderSizePixel = 0
-    FarmBtn.Parent = MobileControls
-    FarmBtn.ZIndex = 300
-    
-    local FarmCorner = Instance.new("UICorner")
-    FarmCorner.CornerRadius = UDim.new(0, 8)
-    FarmCorner.Parent = FarmBtn
-    
-    FarmBtn.TouchTap:Connect(function()
-        _G.Zenith_Data.Config.Farm.Enabled = not _G.Zenith_Data.Config.Farm.Enabled
-        FarmBtn.BackgroundColor3 = _G.Zenith_Data.Config.Farm.Enabled and Color3.fromRGB(0, 200, 100) or Color3.fromRGB(200, 50, 50)
-        print("[FARM] Toggled: " .. (_G.Zenith_Data.Config.Farm.Enabled and "ON" or "OFF"))
-    end)
-    
-    -- Show Menu Button (F7)
-    local MenuBtn = Instance.new("TextButton")
-    MenuBtn.Name = "MenuToggle"
-    MenuBtn.Text = "☰ MENU"
-    MenuBtn.Size = UDim2.new(0, 70, 0, 50)
-    MenuBtn.Position = UDim2.new(0, 90, 1, -70)
-    MenuBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
-    MenuBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    MenuBtn.Font = Enum.Font.GothamBold
-    MenuBtn.TextSize = 12
-    MenuBtn.BorderSizePixel = 0
-    MenuBtn.Parent = MobileControls
-    MenuBtn.ZIndex = 300
-    
-    local MenuCorner = Instance.new("UICorner")
-    MenuCorner.CornerRadius = UDim.new(0, 8)
-    MenuCorner.Parent = MenuBtn
-    
-    MenuBtn.TouchTap:Connect(function()
-        local ScreenGui = CoreGui:FindFirstChild("KanyapakShop_V3")
-        if ScreenGui then
-            local MainMenu = ScreenGui:FindFirstChild("KanyapakMainMenu")
-            if MainMenu then
-                MainMenu.Visible = not MainMenu.Visible
-                print("[MENU] " .. (MainMenu.Visible and "SHOWN" or "HIDDEN"))
-            end
-        end
-    end)
-    
-    print("[MOBILE] Control buttons added at bottom-left")
-end
-
--- ═══════════════════════════════════════════════════════════════════════════
--- COMPLETION
--- ═══════════════════════════════════════════════════════════════════════════
-
-task.wait(3)
-
-pcall(function()
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "🎉 KANYAPAK V3.0",
-        Text = IsMobile and "Ready! Use 🌾 FARM & ☰ MENU buttons" or "Ready! Click 🛍️ icon or F7",
-        Duration = 5
-    })
-end)
-
-print("\n" .. string.rep("=", 60))
-print("✅ KANYAPAK V3.0 - LOADED")
 print(string.rep("=", 60))
+print("✅ KANYAPAK V3.0 - READY")
+print(string.rep("=", 60))
+print("\n🛍️ Click icon at bottom-right corner\n")
 
-if IsMobile then
-    print("\n📱 MOBILE CONTROLS:")
-    print("   🌾 = Toggle Farming (bottom-left)")
-    print("   ☰ = Show Menu (bottom-left)")
-    print("   Or tap 🛍️ icon (bottom-right)")
-else
-    print("\n🖱️  CONTROLS:")
-    print("   🛍️ = Tap icon to toggle menu")
-    print("   F6 = Toggle Farming")
-    print("   F7 = Toggle Menu")
-end
-
-print("\n" .. string.rep("=", 60) .. "\n")
-และอัปเดต UI_Library.lua ตรงส่วนนี้:
-เปลี่ยนบรรทัดที่ 73-75:
-local FloatingIcon = Instance.new("TextButton")  -- เปลี่ยนจาก Frame เป็น TextButton
-FloatingIcon.Name = "FloatingShopIcon"
-FloatingIcon.Size = UDim2.new(0, 65, 0, 65)
-FloatingIcon.Position = UDim2.new(1, -85, 1, -95)  -- ตรวจสอบว่าไม่ติด UI เกม
-FloatingIcon.BackgroundColor3 = Theme.Primary
-FloatingIcon.BorderSizePixel = 0
-FloatingIcon.Text = "🛍️"
-FloatingIcon.TextSize = 32
-FloatingIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
-FloatingIcon.Font = Enum.Font.GothamBold
-FloatingIcon.Parent = ScreenGui
-FloatingIcon.ZIndex = 500
-FloatingIcon.CanQuery = true
-FloatingIcon.AutoButtonColor = false
-
--- เพิ่ม Touch Input
-FloatingIcon.TouchTap:Connect(function()
-    PulseEffect(FloatingIcon)
-    if MenuOpen then
-        CloseMenu()
-    else
-        OpenMenu()
-    end
-end)
-
--- เก็บ MouseButton1Click ไว้ด้วย
-FloatingIcon.MouseButton1Click:Connect(function()
-    PulseEffect(FloatingIcon)
-    if MenuOpen then
-        CloseMenu()
-    else
-        OpenMenu()
-    end
-end)
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "🎉 KANYAPAK V3.0",
+    Text = "Ready! Tap 🛍️ icon",
+    Duration = 5
+})
