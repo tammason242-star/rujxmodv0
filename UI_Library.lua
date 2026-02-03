@@ -1,372 +1,626 @@
-local UI_Lib = {}
+--[[ 
+    ⭐ KANYAPAK SHOP V3.0 - UI_Library.lua ⭐
+    Premium Mobile-Optimized Interface System
+    Features: Animations, Sounds, Icons, Collapsible Sections, Professional Design
+]]
 
--- [[ ตั้งค่าเริ่มต้น ]] --
-local UIS = game:GetService("UserInputService")
+local UI_Library = {}
+local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local Player = game.Players.LocalPlayer
 
--- [[ โครงสร้างข้อมูลสำหรับเก็บค่าต่างๆ ]] --
--- ถ้ายังไม่มีการประกาศ _G.Zenith_Data ให้ประกาศไว้กัน error
-if not _G.Zenith_Data then
-    _G.Zenith_Data = {
-        Config = {
-            Automation = { Fire=false, Eat=false, Stun=false },
-            Visuals = { Chest=false, Corrupted=false, FullBright=false, NoFog=false },
-            Player = { Speed=16, Jump=50, InfJump=false, SafeZone=false },
-            Combat = { KillAura=false, Reach=false, AutoPickup=false, FastBreak=false }
-        }
-    }
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 🎨 THEME SYSTEM
+-- ═══════════════════════════════════════════════════════════════════════════
+
+local Theme = {
+    Primary = Color3.fromRGB(0, 255, 127),      -- Neon Green
+    Secondary = Color3.fromRGB(255, 85, 127),   -- Hot Pink
+    Background = Color3.fromRGB(15, 15, 15),    -- Dark Black
+    Surface = Color3.fromRGB(25, 25, 25),       -- Dark Gray
+    Surface2 = Color3.fromRGB(35, 35, 35),      -- Lighter Gray
+    Text = Color3.fromRGB(220, 220, 220),       -- Light Gray
+    TextDark = Color3.fromRGB(150, 150, 150),   -- Medium Gray
+    Accent = Color3.fromRGB(0, 150, 255),       -- Cyan
+    Success = Color3.fromRGB(0, 255, 127),      -- Green
+    Warning = Color3.fromRGB(255, 165, 0),      -- Orange
+    Danger = Color3.fromRGB(255, 50, 50)        -- Red
+}
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 🔊 SOUND EFFECTS
+-- ═══════════════════════════════════════════════════════════════════════════
+
+local SoundAssets = {
+    Toggle = "rbxassetid://12221967",
+    Click = "rbxassetid://12221964",
+    Open = "rbxassetid://12221969",
+    Close = "rbxassetid://12221966",
+    Hover = "rbxassetid://12221965"
+}
+
+local function PlaySound(SoundId, Volume)
+    Volume = Volume or 0.5
+    if not SoundId then return end
+    pcall(function()
+        local Sound = Instance.new("Sound")
+        Sound.SoundId = SoundId
+        Sound.Volume = Volume
+        Sound.Parent = workspace
+        game:GetService("Debris"):AddItem(Sound, 2)
+        Sound:Play()
+    end)
 end
 
-function UI_Lib:Init()
-    -- ลบ GUI เก่าออกถ้ามี (กันซ้อน)
-    if game.CoreGui:FindFirstChild("Kanyapak_Project_UI") then
-        game.CoreGui.Kanyapak_Project_UI:Destroy()
-    end
+-- ═══════════════════════════════════════════════════════════════════════════
+-- ⚡ ANIMATION & TWEEN HELPERS
+-- ═══════════════════════════════════════════════════════════════════════════
 
+local function CreateTween(Object, Duration, Properties, Style, Direction)
+    Style = Style or Enum.EasingStyle.Quad
+    Direction = Direction or Enum.EasingDirection.InOut
+    local TweenInfo = TweenInfo.new(Duration, Style, Direction)
+    local Tween = TweenService:Create(Object, TweenInfo, Properties)
+    Tween:Play()
+    return Tween
+end
+
+local function PulseEffect(Object)
+    local OriginalSize = Object.Size
+    CreateTween(Object, 0.1, { Size = OriginalSize + UDim2.new(0, 4, 0, 4) })
+    task.wait(0.1)
+    CreateTween(Object, 0.1, { Size = OriginalSize })
+end
+
+local function SlideInEffect(Object, FromSide)
+    FromSide = FromSide or "right"
+    local OriginalPos = Object.Position
+    
+    if FromSide == "right" then
+        Object.Position = UDim2.new(1.2, 0, OriginalPos.Y.Scale, OriginalPos.Y.Offset)
+    else
+        Object.Position = UDim2.new(-0.2, 0, OriginalPos.Y.Scale, OriginalPos.Y.Offset)
+    end
+    
+    CreateTween(Object, 0.4, { Position = OriginalPos })
+end
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 📌 MAIN UI INITIALIZATION
+-- ═══════════════════════════════════════════════════════════════════════════
+
+function UI_Library:Init()
+    print("🎨 [KANYAPAK SHOP V3] Premium UI Initializing...")
+    PlaySound(SoundAssets.Open, 0.4)
+    
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- 1. MAIN SCREEN GUI
+    -- ═══════════════════════════════════════════════════════════════════════════
+    
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "Kanyapak_Project_UI"
-    ScreenGui.Parent = game:GetService("CoreGui")
+    ScreenGui.Name = "KanyapakShop_V3"
+    ScreenGui.Parent = CoreGui
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ScreenGui.ResetOnSpawn = false
-
-    -- =============================================
-    -- [1. ปุ่มลอย Floating Button - Kanyapak HD]
-    -- =============================================
-    local ToggleBtn = Instance.new("TextButton")
-    ToggleBtn.Name = "KanyapakBtn"
-    ToggleBtn.Size = UDim2.new(0, 130, 0, 50)
-    ToggleBtn.Position = UDim2.new(0.05, 0, 0.1, 0)
-    ToggleBtn.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
-    ToggleBtn.Text = "Kanyapak"
-    ToggleBtn.TextColor3 = Color3.fromRGB(0, 255, 255) -- สีฟ้า Neon
-    ToggleBtn.Font = Enum.Font.GothamBold
-    ToggleBtn.TextSize = 22
-    ToggleBtn.RichText = true
-    ToggleBtn.AutoButtonColor = false
-    ToggleBtn.Parent = ScreenGui
-
-    -- ตกแต่งปุ่ม
-    local BtnCorner = Instance.new("UICorner", ToggleBtn)
-    BtnCorner.CornerRadius = UDim.new(0, 12)
     
-    local BtnStroke = Instance.new("UIStroke", ToggleBtn)
-    BtnStroke.Color = Color3.fromRGB(0, 255, 255)
-    BtnStroke.Thickness = 2.5
-    BtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-
-    -- เงาปุ่ม
-    local Shadow = Instance.new("ImageLabel", ToggleBtn)
-    Shadow.AnchorPoint = Vector2.new(0.5, 0.5)
-    Shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-    Shadow.Size = UDim2.new(1, 40, 1, 40)
-    Shadow.BackgroundTransparency = 1
-    Shadow.Image = "rbxassetid://6015897843"
-    Shadow.ImageColor3 = Color3.fromRGB(0, 255, 255)
-    Shadow.ImageTransparency = 0.6
-    Shadow.ZIndex = -1
-
-    -- =============================================
-    -- [2. หน้าต่างเมนูหลัก Main Frame]
-    -- =============================================
-    local Main = Instance.new("Frame")
-    Main.Name = "MainFrame"
-    Main.Size = UDim2.new(0, 550, 0, 380)
-    Main.Position = UDim2.new(0.5, -275, 0.5, -190)
-    Main.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-    Main.Visible = false -- เริ่มมาซ่อนไว้ก่อน
-    Main.Parent = ScreenGui
-
-    -- ตกแต่งหน้าต่างหลัก
-    Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 15)
-    local MainStroke = Instance.new("UIStroke", Main)
-    MainStroke.Color = Color3.fromRGB(40, 40, 60)
-    MainStroke.Thickness = 2
-
-    -- แถบชื่อด้านบน
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- 2. FLOATING SHOP ICON BUTTON
+    -- ═══════════════════════════════════════════════════════════════════════════
+    
+    local FloatingIcon = Instance.new("Frame")
+    FloatingIcon.Name = "FloatingShopIcon"
+    FloatingIcon.Size = UDim2.new(0, 65, 0, 65)
+    FloatingIcon.Position = UDim2.new(1, -85, 1, -95)
+    FloatingIcon.BackgroundColor3 = Theme.Primary
+    FloatingIcon.BorderSizePixel = 0
+    FloatingIcon.Parent = ScreenGui
+    FloatingIcon.ZIndex = 200
+    FloatingIcon.CanQuery = true
+    
+    local IconCorner = Instance.new("UICorner")
+    IconCorner.CornerRadius = UDim.new(1, 0)
+    IconCorner.Parent = FloatingIcon
+    
+    local IconStroke = Instance.new("UIStroke")
+    IconStroke.Color = Theme.Secondary
+    IconStroke.Thickness = 3
+    IconStroke.Transparency = 0
+    IconStroke.Parent = FloatingIcon
+    
+    local IconLabel = Instance.new("TextLabel")
+    IconLabel.Text = "🛍️"
+    IconLabel.Size = UDim2.new(1, 0, 1, 0)
+    IconLabel.BackgroundTransparency = 1
+    IconLabel.Font = Enum.Font.GothamBold
+    IconLabel.TextSize = 32
+    IconLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    IconLabel.Parent = FloatingIcon
+    IconLabel.ZIndex = 201
+    
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- 3. MAIN MENU FRAME
+    -- ═══════════════════════════════════════════════════════════════════════════
+    
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Name = "KanyapakMainMenu"
+    MainFrame.Size = UDim2.new(0, 450, 0, 720)
+    MainFrame.Position = UDim2.new(0.5, -225, 0.5, -360)
+    MainFrame.BackgroundColor3 = Theme.Background
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Parent = ScreenGui
+    MainFrame.Visible = false
+    MainFrame.ZIndex = 100
+    MainFrame.CanQuery = true
+    
+    local MainStroke = Instance.new("UIStroke")
+    MainStroke.Color = Theme.Primary
+    MainStroke.Thickness = 3
+    MainStroke.Parent = MainFrame
+    
+    local MainCorner = Instance.new("UICorner")
+    MainCorner.CornerRadius = UDim.new(0, 15)
+    MainCorner.Parent = MainFrame
+    
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- 4. HEADER SECTION WITH CLOSE BUTTON
+    -- ═══════════════════════════════════════════════════════════════════════════
+    
+    local Header = Instance.new("Frame")
+    Header.Name = "Header"
+    Header.Size = UDim2.new(1, 0, 0, 50)
+    Header.BackgroundColor3 = Theme.Surface
+    Header.BorderSizePixel = 0
+    Header.Parent = MainFrame
+    Header.ZIndex = 101
+    
+    local HeaderCorner = Instance.new("UICorner")
+    HeaderCorner.CornerRadius = UDim.new(0, 15)
+    HeaderCorner.Parent = Header
+    
     local Title = Instance.new("TextLabel")
-    Title.Text = "KANYAPAK | 99 NIGHTS SURVIVAL"
-    Title.Size = UDim2.new(1, -20, 0, 40)
-    Title.Position = UDim2.new(0, 20, 0, 5)
+    Title.Text = "⭐ KANYAPAK SHOP V3"
+    Title.Size = UDim2.new(1, -80, 1, 0)
+    Title.Position = UDim2.new(0, 15, 0, 0)
     Title.BackgroundTransparency = 1
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.Font = Enum.Font.GothamBold
-    Title.TextSize = 18
+    Title.TextColor3 = Theme.Primary
     Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.Parent = Main
-
-    -- เส้นคั่น
-    local Line = Instance.new("Frame")
-    Line.Size = UDim2.new(1, 0, 0, 1)
-    Line.Position = UDim2.new(0, 0, 0, 50)
-    Line.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-    Line.BorderSizePixel = 0
-    Line.Parent = Main
-
-    -- =============================================
-    -- [3. ระบบ Sidebar (เลือกหมวดหมู่)]
-    -- =============================================
-    local Sidebar = Instance.new("Frame")
-    Sidebar.Size = UDim2.new(0, 140, 1, -55)
-    Sidebar.Position = UDim2.new(0, 0, 0, 55)
-    Sidebar.BackgroundTransparency = 1
-    Sidebar.Parent = Main
-
-    local SidebarLayout = Instance.new("UIListLayout", Sidebar)
-    SidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    SidebarLayout.Padding = UDim.new(0, 8)
-    SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
-    local ContentContainer = Instance.new("Frame")
-    ContentContainer.Size = UDim2.new(1, -150, 1, -60)
-    ContentContainer.Position = UDim2.new(0, 150, 0, 55)
-    ContentContainer.BackgroundTransparency = 1
-    ContentContainer.ClipsDescendants = true
-    ContentContainer.Parent = Main
-
-    -- ฟังก์ชันสร้างหน้า (Tab)
-    local Tabs = {}
-    local function CreateTab(Name, IconID)
-        -- ปุ่มเลือกหน้า
-        local TabBtn = Instance.new("TextButton")
-        TabBtn.Size = UDim2.new(0.9, 0, 0, 40)
-        TabBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-        TabBtn.Text = Name
-        TabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
-        TabBtn.Font = Enum.Font.GothamMedium
-        TabBtn.TextSize = 14
-        TabBtn.Parent = Sidebar
-        
-        local TCorner = Instance.new("UICorner", TabBtn)
-        TCorner.CornerRadius = UDim.new(0, 8)
-
-        -- หน้าเนื้อหา
-        local Page = Instance.new("ScrollingFrame")
-        Page.Name = Name .. "_Page"
-        Page.Size = UDim2.new(1, 0, 1, 0)
-        Page.BackgroundTransparency = 1
-        Page.Visible = false
-        Page.ScrollBarThickness = 2
-        Page.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 255)
-        Page.Parent = ContentContainer
-        
-        local PLayout = Instance.new("UIListLayout", Page)
-        PLayout.Padding = UDim.new(0, 10)
-        PLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        
-        Instance.new("UIPadding", Page).PaddingRight = UDim.new(0, 5)
-
-        -- ระบบกดเปลี่ยนหน้า
-        TabBtn.MouseButton1Click:Connect(function()
-            -- รีเซ็ตปุ่มอื่น
-            for _, btn in pairs(Sidebar:GetChildren()) do
-                if btn:IsA("TextButton") then
-                    TweenService:Create(btn, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(25, 25, 35), TextColor3 = Color3.fromRGB(180, 180, 180)}):Play()
-                end
-            end
-            -- รีเซ็ตหน้าอื่น
-            for _, pg in pairs(ContentContainer:GetChildren()) do
-                pg.Visible = false
-            end
-            
-            -- เปิดหน้าที่เลือก
-            Page.Visible = true
-            TweenService:Create(TabBtn, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(0, 255, 255), TextColor3 = Color3.fromRGB(0, 0, 0)}):Play()
-        end)
-        
-        return Page
-    end
-
-    -- =============================================
-    -- [4. ฟังก์ชันสร้าง Toggle (สวิตช์)]
-    -- =============================================
-    function UI_Lib:AddToggle(Page, Text, Category, Flag, Default)
-        local Frame = Instance.new("Frame")
-        Frame.Size = UDim2.new(1, 0, 0, 45)
-        Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-        Frame.Parent = Page
-        Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
-
-        local Label = Instance.new("TextLabel")
-        Label.Text = "  " .. Text
-        Label.Size = UDim2.new(0.7, 0, 1, 0)
-        Label.BackgroundTransparency = 1
-        Label.TextColor3 = Color3.fromRGB(230, 230, 230)
-        Label.TextXAlignment = Enum.TextXAlignment.Left
-        Label.Font = Enum.Font.Gotham
-        Label.TextSize = 14
-        Label.Parent = Frame
-
-        local Button = Instance.new("TextButton")
-        Button.Size = UDim2.new(0, 50, 0, 24)
-        Button.Position = UDim2.new(1, -60, 0.5, -12)
-        Button.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-        Button.Text = ""
-        Button.Parent = Frame
-        Instance.new("UICorner", Button).CornerRadius = UDim.new(1, 0)
-
-        local Circle = Instance.new("Frame")
-        Circle.Size = UDim2.new(0, 20, 0, 20)
-        Circle.Position = UDim2.new(0, 2, 0.5, -10)
-        Circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        Circle.Parent = Button
-        Instance.new("UICorner", Circle).CornerRadius = UDim.new(1, 0)
-
-        local Toggled = Default or false
-        
-        -- ฟังก์ชันเปลี่ยนสถานะ
-        local function UpdateToggle()
-            Toggled = not Toggled
-            local TargetPos = Toggled and UDim2.new(1, -22, 0.5, -10) or UDim2.new(0, 2, 0.5, -10)
-            local TargetColor = Toggled and Color3.fromRGB(0, 255, 255) or Color3.fromRGB(50, 50, 60)
-            
-            TweenService:Create(Circle, TweenInfo.new(0.2), {Position = TargetPos}):Play()
-            TweenService:Create(Button, TweenInfo.new(0.2), {BackgroundColor3 = TargetColor}):Play()
-            
-            -- บันทึกค่าลง _G
-            if _G.Zenith_Data.Config[Category] then
-                _G.Zenith_Data.Config[Category][Flag] = Toggled
-                print("Set " .. Flag .. " to " .. tostring(Toggled))
-            end
-        end
-
-        Button.MouseButton1Click:Connect(UpdateToggle)
-    end
-
-    -- =============================================
-    -- [5. ฟังก์ชันสร้าง Slider (แถบเลื่อน)]
-    -- =============================================
-    function UI_Lib:AddSlider(Page, Text, Category, Flag, Min, Max, Default)
-        local Frame = Instance.new("Frame")
-        Frame.Size = UDim2.new(1, 0, 0, 60)
-        Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-        Frame.Parent = Page
-        Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
-
-        local Label = Instance.new("TextLabel")
-        Label.Text = "  " .. Text .. ": " .. Default
-        Label.Size = UDim2.new(1, 0, 0, 30)
-        Label.BackgroundTransparency = 1
-        Label.TextColor3 = Color3.fromRGB(230, 230, 230)
-        Label.TextXAlignment = Enum.TextXAlignment.Left
-        Label.Font = Enum.Font.Gotham
-        Label.TextSize = 14
-        Label.Parent = Frame
-
-        local SliderBar = Instance.new("TextButton")
-        SliderBar.Size = UDim2.new(0.9, 0, 0, 6)
-        SliderBar.Position = UDim2.new(0.05, 0, 0.7, 0)
-        SliderBar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-        SliderBar.Text = ""
-        SliderBar.AutoButtonColor = false
-        SliderBar.Parent = Frame
-        Instance.new("UICorner", SliderBar).CornerRadius = UDim.new(1, 0)
-
-        local Fill = Instance.new("Frame")
-        Fill.Size = UDim2.new((Default - Min) / (Max - Min), 0, 1, 0)
-        Fill.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
-        Fill.Parent = SliderBar
-        Instance.new("UICorner", Fill).CornerRadius = UDim.new(1, 0)
-
-        local function Update(Input)
-            local SizeX = math.clamp((Input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
-            Fill.Size = UDim2.new(SizeX, 0, 1, 0)
-            local Value = math.floor(Min + ((Max - Min) * SizeX))
-            Label.Text = "  " .. Text .. ": " .. Value
-            
-            if _G.Zenith_Data.Config[Category] then
-                _G.Zenith_Data.Config[Category][Flag] = Value
-            end
-        end
-
-        local Dragging = false
-        SliderBar.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-                Dragging = true
-                Update(Input)
-            end
-        end)
-        
-        UIS.InputEnded:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-                Dragging = false
-            end
-        end)
-        
-        UIS.InputChanged:Connect(function(Input)
-            if Dragging and (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) then
-                Update(Input)
-            end
-        end)
-    end
-
-    -- =============================================
-    -- [6. สร้างหน้าและใส่ฟังก์ชัน (Setup)]
-    -- =============================================
+    Title.Font = Enum.Font.GothamBold
+    Title.TextSize = 16
+    Title.Parent = Header
+    Title.ZIndex = 102
     
-    -- สร้าง Tab หมวดหมู่
-    local AutoTab = CreateTab("อัตโนมัติ")
-    local VisualTab = CreateTab("การมองเห็น")
-    local PlayerTab = CreateTab("ตัวละคร")
-    local CombatTab = CreateTab("การต่อสู้")
-
-    -- [[ หมวดอัตโนมัติ ]]
-    UI_Lib:AddToggle(AutoTab, "เติมไฟอัตโนมัติ", "Automation", "Fire")
-    UI_Lib:AddToggle(AutoTab, "กินอาหารอัตโนมัติ", "Automation", "Eat")
-    UI_Lib:AddToggle(AutoTab, "สตั้นมอนสเตอร์ (Auto Stun)", "Automation", "Stun")
+    local WorldInfo = Instance.new("TextLabel")
+    WorldInfo.Text = "SEA " .. _G.Zenith_Data.CurrentSea
+    WorldInfo.Size = UDim2.new(0, 70, 1, 0)
+    WorldInfo.Position = UDim2.new(1, -75, 0, 0)
+    WorldInfo.BackgroundColor3 = Theme.Accent
+    WorldInfo.TextColor3 = Color3.fromRGB(0, 0, 0)
+    WorldInfo.Font = Enum.Font.GothamBold
+    WorldInfo.TextSize = 12
+    WorldInfo.BorderSizePixel = 0
+    WorldInfo.Parent = Header
+    WorldInfo.ZIndex = 102
     
-    -- [[ หมวดการมองเห็น ]]
-    UI_Lib:AddToggle(VisualTab, "มองทะลุกล่อง (Box ESP)", "Visuals", "Chest")
-    UI_Lib:AddToggle(VisualTab, "ไฮไลท์กล่องติดเชื้อ (สีม่วง)", "Visuals", "Corrupted")
-    UI_Lib:AddToggle(VisualTab, "สว่างคาตา (Full Bright)", "Visuals", "FullBright")
-    UI_Lib:AddToggle(VisualTab, "ลบหมอก (No Fog)", "Visuals", "NoFog")
-
-    -- [[ หมวดตัวละคร ]]
-    UI_Lib:AddSlider(PlayerTab, "ความเร็วเดิน (WalkSpeed)", "Player", "Speed", 16, 200, 16)
-    UI_Lib:AddSlider(PlayerTab, "แรงกระโดด (JumpPower)", "Player", "Jump", 50, 400, 50)
-    UI_Lib:AddToggle(PlayerTab, "กระโดดรัว (Inf Jump)", "Player", "InfJump")
-    UI_Lib:AddToggle(PlayerTab, "วาร์ปกลับบ้าน (Safe Zone)", "Player", "SafeZone")
-
-    -- [[ หมวดการต่อสู้/ฟาร์ม ]]
-    UI_Lib:AddToggle(CombatTab, "ตบมอนรอบตัว (Kill Aura)", "Combat", "KillAura")
-    UI_Lib:AddToggle(CombatTab, "ตีไกล / ขุดไกล (Reach)", "Combat", "Reach")
-    UI_Lib:AddToggle(CombatTab, "ดูดของอัตโนมัติ (Pickup)", "Combat", "AutoPickup")
-    UI_Lib:AddToggle(CombatTab, "ขุดไว / ตีไว (Fast Break)", "Combat", "FastBreak")
-
-
-    -- =============================================
-    -- [7. ระบบลากปุ่ม & เปิดปิดเมนู]
-    -- =============================================
-    local Dragging, DragStart, StartPos
-    ToggleBtn.InputBegan:Connect(function(Input)
-        if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+    local WorldCorner = Instance.new("UICorner")
+    WorldCorner.CornerRadius = UDim.new(0, 8)
+    WorldCorner.Parent = WorldInfo
+    
+    -- Close Button
+    local CloseButton = Instance.new("TextButton")
+    CloseButton.Name = "CloseBtn"
+    CloseButton.Text = "✕"
+    CloseButton.Size = UDim2.new(0, 40, 0, 40)
+    CloseButton.Position = UDim2.new(1, -45, 0, 5)
+    CloseButton.BackgroundColor3 = Theme.Danger
+    CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseButton.Font = Enum.Font.GothamBold
+    CloseButton.TextSize = 18
+    CloseButton.BorderSizePixel = 0
+    CloseButton.AutoButtonColor = false
+    CloseButton.Parent = Header
+    CloseButton.ZIndex = 102
+    
+    local CloseCorner = Instance.new("UICorner")
+    CloseCorner.CornerRadius = UDim.new(0, 8)
+    CloseCorner.Parent = CloseButton
+    
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- 5. SCROLLABLE CONTENT AREA
+    -- ═══════════════════════════════════════════════════════════════════════════
+    
+    local ContentFrame = Instance.new("ScrollingFrame")
+    ContentFrame.Name = "ContentArea"
+    ContentFrame.Size = UDim2.new(1, -10, 1, -60)
+    ContentFrame.Position = UDim2.new(0, 5, 0, 55)
+    ContentFrame.BackgroundTransparency = 1
+    ContentFrame.ScrollBarThickness = 3
+    ContentFrame.ScrollBarImageColor3 = Theme.Primary
+    ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    ContentFrame.Parent = MainFrame
+    ContentFrame.ZIndex = 101
+    
+    local Layout = Instance.new("UIListLayout")
+    Layout.Padding = UDim.new(0, 8)
+    Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    Layout.Parent = ContentFrame
+    
+    Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        ContentFrame.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y)
+    end)
+    
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- 6. TOGGLE BUTTON HELPER FUNCTION
+    -- ═══════════════════════════════════════════════════════════════════════════
+    
+    local function CreateToggle(Parent, IconText, Text, ConfigTable, ConfigKey, Description)
+        Description = Description or ""
+        
+        local ToggleContainer = Instance.new("TextButton")
+        ToggleContainer.Name = ConfigKey .. "_Toggle"
+        ToggleContainer.Size = UDim2.new(0, 420, 0, 50)
+        ToggleContainer.BackgroundColor3 = Theme.Surface2
+        ToggleContainer.Text = ""
+        ToggleContainer.AutoButtonColor = false
+        ToggleContainer.Parent = Parent
+        ToggleContainer.ZIndex = 102
+        
+        local ToggleCorner = Instance.new("UICorner")
+        ToggleCorner.CornerRadius = UDim.new(0, 8)
+        ToggleCorner.Parent = ToggleContainer
+        
+        local ToggleStroke = Instance.new("UIStroke")
+        ToggleStroke.Color = Theme.TextDark
+        ToggleStroke.Thickness = 1
+        ToggleStroke.Transparency = 0.7
+        ToggleStroke.Parent = ToggleContainer
+        
+        -- Icon
+        local Icon = Instance.new("TextLabel")
+        Icon.Text = IconText
+        Icon.Size = UDim2.new(0, 40, 0, 40)
+        Icon.Position = UDim2.new(0, 8, 0.5, -20)
+        Icon.BackgroundColor3 = Theme.Primary
+        Icon.TextColor3 = Color3.fromRGB(0, 0, 0)
+        Icon.Font = Enum.Font.GothamBold
+        Icon.TextSize = 20
+        Icon.BorderSizePixel = 0
+        Icon.Parent = ToggleContainer
+        Icon.ZIndex = 103
+        
+        local IconCorner2 = Instance.new("UICorner")
+        IconCorner2.CornerRadius = UDim.new(0, 6)
+        IconCorner2.Parent = Icon
+        
+        -- Label & Description
+        local InfoContainer = Instance.new("Frame")
+        InfoContainer.Size = UDim2.new(0, 280, 1, 0)
+        InfoContainer.Position = UDim2.new(0, 55, 0, 0)
+        InfoContainer.BackgroundTransparency = 1
+        InfoContainer.Parent = ToggleContainer
+        InfoContainer.ZIndex = 103
+        
+        local Label = Instance.new("TextLabel")
+        Label.Text = Text
+        Label.Size = UDim2.new(1, 0, 0, 25)
+        Label.Position = UDim2.new(0, 0, 0, 5)
+        Label.BackgroundTransparency = 1
+        Label.TextColor3 = Theme.Text
+        Label.TextXAlignment = Enum.TextXAlignment.Left
+        Label.Font = Enum.Font.GothamBold
+        Label.TextSize = 13
+        Label.Parent = InfoContainer
+        Label.ZIndex = 103
+        
+        local Desc = Instance.new("TextLabel")
+        Desc.Text = Description
+        Desc.Size = UDim2.new(1, 0, 0, 18)
+        Desc.Position = UDim2.new(0, 0, 0, 28)
+        Desc.BackgroundTransparency = 1
+        Desc.TextColor3 = Theme.TextDark
+        Desc.TextXAlignment = Enum.TextXAlignment.Left
+        Desc.Font = Enum.Font.Gotham
+        Desc.TextSize = 11
+        Desc.Parent = InfoContainer
+        Desc.ZIndex = 103
+        
+        -- Toggle Switch
+        local SwitchFrame = Instance.new("Frame")
+        SwitchFrame.Size = UDim2.new(0, 50, 0, 28)
+        SwitchFrame.Position = UDim2.new(1, -60, 0.5, -14)
+        SwitchFrame.BackgroundColor3 = ConfigTable[ConfigKey] and Theme.Success or Theme.TextDark
+        SwitchFrame.BorderSizePixel = 0
+        SwitchFrame.Parent = ToggleContainer
+        SwitchFrame.ZIndex = 103
+        
+        local SwitchCorner = Instance.new("UICorner")
+        SwitchCorner.CornerRadius = UDim.new(0, 14)
+        SwitchCorner.Parent = SwitchFrame
+        
+        local SwitchDot = Instance.new("Frame")
+        SwitchDot.Size = UDim2.new(0, 24, 0, 24)
+        SwitchDot.Position = ConfigTable[ConfigKey] and UDim2.new(0, 23, 0.5, -12) or UDim2.new(0, 2, 0.5, -12)
+        SwitchDot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        SwitchDot.BorderSizePixel = 0
+        SwitchDot.Parent = SwitchFrame
+        SwitchDot.ZIndex = 104
+        
+        local DotCorner = Instance.new("UICorner")
+        DotCorner.CornerRadius = UDim.new(1, 0)
+        DotCorner.Parent = SwitchDot
+        
+        -- Toggle Functionality
+        ToggleContainer.MouseButton1Click:Connect(function()
+            ConfigTable[ConfigKey] = not ConfigTable[ConfigKey]
+            PlaySound(SoundAssets.Toggle, 0.4)
+            PulseEffect(ToggleContainer)
+            
+            CreateTween(SwitchFrame, 0.3, {
+                BackgroundColor3 = ConfigTable[ConfigKey] and Theme.Success or Theme.TextDark
+            })
+            
+            CreateTween(SwitchDot, 0.3, {
+                Position = ConfigTable[ConfigKey] and UDim2.new(0, 23, 0.5, -12) or UDim2.new(0, 2, 0.5, -12)
+            })
+            
+            print("[KANYAPAK] " .. Text .. ": " .. (ConfigTable[ConfigKey] and "✅ ON" or "❌ OFF"))
+        end)
+        
+        -- Hover Effects
+        ToggleContainer.MouseEnter:Connect(function()
+            CreateTween(ToggleContainer, 0.2, {
+                BackgroundColor3 = Theme.Surface
+            })
+            PlaySound(SoundAssets.Hover, 0.2)
+        end)
+        
+        ToggleContainer.MouseLeave:Connect(function()
+            CreateTween(ToggleContainer, 0.2, {
+                BackgroundColor3 = Theme.Surface2
+            })
+        end)
+    end
+    
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- 7. SECTION HEADER HELPER
+    -- ═══════════════════════════════════════════════════════════════════════════
+    
+    local function CreateSection(Parent, Title, IsCollapsible)
+        IsCollapsible = IsCollapsible or false
+        
+        local SectionHeader = Instance.new("TextButton")
+        SectionHeader.Name = Title .. "_Header"
+        SectionHeader.Size = UDim2.new(0, 420, 0, 35)
+        SectionHeader.BackgroundColor3 = Theme.Accent
+        SectionHeader.Text = ""
+        SectionHeader.AutoButtonColor = false
+        SectionHeader.Parent = Parent
+        SectionHeader.ZIndex = 102
+        
+        local SectionCorner = Instance.new("UICorner")
+        SectionCorner.CornerRadius = UDim.new(0, 8)
+        SectionCorner.Parent = SectionHeader
+        
+        local SectionTitle = Instance.new("TextLabel")
+        SectionTitle.Text = Title
+        SectionTitle.Size = UDim2.new(1, -30, 1, 0)
+        SectionTitle.Position = UDim2.new(0, 10, 0, 0)
+        SectionTitle.BackgroundTransparency = 1
+        SectionTitle.TextColor3 = Color3.fromRGB(0, 0, 0)
+        SectionTitle.Font = Enum.Font.GothamBold
+        SectionTitle.TextSize = 13
+        SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
+        SectionTitle.Parent = SectionHeader
+        SectionTitle.ZIndex = 103
+        
+        if IsCollapsible then
+            local CollapseIcon = Instance.new("TextLabel")
+            CollapseIcon.Text = "▼"
+            CollapseIcon.Size = UDim2.new(0, 25, 0, 25)
+            CollapseIcon.Position = UDim2.new(1, -30, 0.5, -12)
+            CollapseIcon.BackgroundTransparency = 1
+            CollapseIcon.TextColor3 = Color3.fromRGB(0, 0, 0)
+            CollapseIcon.Font = Enum.Font.GothamBold
+            CollapseIcon.TextSize = 14
+            CollapseIcon.Parent = SectionHeader
+            CollapseIcon.ZIndex = 103
+        end
+        
+        SectionHeader.MouseEnter:Connect(function()
+            CreateTween(SectionHeader, 0.2, {
+                BackgroundColor3 = Theme.Primary
+            })
+        end)
+        
+        SectionHeader.MouseLeave:Connect(function()
+            CreateTween(SectionHeader, 0.2, {
+                BackgroundColor3 = Theme.Accent
+            })
+        end)
+        
+        return SectionHeader
+    end
+    
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- 8. BUILD UI SECTIONS
+    -- ═══════════════════════════════════════════════════════════════════════════
+    
+    -- FARMING SECTION
+    CreateSection(ContentFrame, "🌾 FARMING SYSTEM", true)
+    CreateToggle(ContentFrame, "🎯", "Auto Farm Level", _G.Zenith_Data.Config.Farm, "Level", "ฟาร์มเลเวลอัตโนมัติ")
+    CreateToggle(ContentFrame, "⚔️", "Auto Mastery", _G.Zenith_Data.Config.Farm, "Mastery", "ฟาร์มระดับเลเวลอาวุธ")
+    CreateToggle(ContentFrame, "🧲", "Bring Mobs", _G.Zenith_Data.Config.Farm, "BringMob", "รวบรวมศัตรูอัตโนมัติ")
+    CreateToggle(ContentFrame, "💰", "Auto Sell Items", _G.Zenith_Data.Config.Farm, "AutoSell", "ขายไอเทมอัตโนมัติ")
+    
+    -- PLAYER ENHANCEMENT SECTION
+    CreateSection(ContentFrame, "👤 PLAYER ENHANCEMENT", true)
+    CreateToggle(ContentFrame, "🚀", "Infinite Jump", _G.Zenith_Data.Config.Player, "InfJump", "กระโดดไม่จำกัดครั้ง")
+    CreateToggle(ContentFrame, "👻", "No Clip", _G.Zenith_Data.Config.Player, "NoClip", "ผ่านผนังและวัตถุ")
+    CreateToggle(ContentFrame, "🛡️", "Anti-Stun", _G.Zenith_Data.Config.Player, "AntiStun", "ป้องกันการสตั้น")
+    CreateToggle(ContentFrame, "🌪️", "Anti-Knockback", _G.Zenith_Data.Config.Player, "AntiKnockback", "ป้องกันการหลุด")
+    CreateToggle(ContentFrame, "🪂", "Flight Mode", _G.Zenith_Data.Config.Player, "FlightMode", "บินได้อย่างอิสระ")
+    
+    -- VISUAL & ESP SECTION
+    CreateSection(ContentFrame, "👁️ VISUAL & ESP", true)
+    CreateToggle(ContentFrame, "🍎", "Fruit ESP", _G.Zenith_Data.Config.Visuals, "FruitESP", "มองเห็นผลไม้ทั้งแมพ")
+    CreateToggle(ContentFrame, "👥", "Player ESP", _G.Zenith_Data.Config.Visuals, "PlayerESP", "มองเห็นผู้เล่นทั้งหมด")
+    CreateToggle(ContentFrame, "💎", "Chest ESP", _G.Zenith_Data.Config.Visuals, "ChestESP", "มองเห็นหีบสมบัติ")
+    CreateToggle(ContentFrame, "🌞", "Full Bright", _G.Zenith_Data.Config.Visuals, "FullBright", "สว่างเต็มที่")
+    CreateToggle(ContentFrame, "🗺️", "Island ESP", _G.Zenith_Data.Config.Visuals, "IslandESP", "แสดงแผนที่เกาะ")
+    
+    -- SPECIAL FEATURES SECTION
+    CreateSection(ContentFrame, "✨ SPECIAL FEATURES", true)
+    CreateToggle(ContentFrame, "🎪", "Auto Raid", _G.Zenith_Data.Config.Misc, "AutoRaid", "โจมตี Raid อัตโนมัติ")
+    CreateToggle(ContentFrame, "🌍", "Auto New World", _G.Zenith_Data.Config.Misc, "AutoNewWorld", "เปลี่ยนโลกอัตโนมัติ")
+    CreateToggle(ContentFrame, "🎯", "Fruit Sniper", _G.Zenith_Data.Config.Misc, "FruitSniper", "ล็อคผลไม้จากไกล")
+    CreateToggle(ContentFrame, "⏰", "Anti-AFK", _G.Zenith_Data.Config.Misc, "AntiAFK", "ป้องกันการถูกเตะออก")
+    
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- 9. FLOATING ICON INTERACTIONS
+    -- ═══════════════════════════════════════════════════════════════════════════
+    
+    local MenuOpen = false
+    
+    local function ToggleMenu()
+        MenuOpen = not MenuOpen
+        PlaySound(MenuOpen and SoundAssets.Open or SoundAssets.Close, 0.4)
+        
+        if MenuOpen then
+            MainFrame.Visible = true
+            SlideInEffect(MainFrame, "right")
+            CreateTween(FloatingIcon, 0.3, {
+                BackgroundColor3 = Theme.Secondary
+            })
+        else
+            CreateTween(MainFrame, 0.3, {
+                Position = UDim2.new(2, 0, 0.5, -360)
+            })
+            task.wait(0.3)
+            MainFrame.Visible = false
+            CreateTween(FloatingIcon, 0.3, {
+                BackgroundColor3 = Theme.Primary
+            })
+        end
+    end
+    
+    FloatingIcon.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            PulseEffect(FloatingIcon)
+            ToggleMenu()
+        end
+    end)
+    
+    FloatingIcon.MouseEnter:Connect(function()
+        CreateTween(FloatingIcon, 0.2, {
+            Size = UDim2.new(0, 72, 0, 72)
+        })
+    end)
+    
+    FloatingIcon.MouseLeave:Connect(function()
+        if not MenuOpen then
+            CreateTween(FloatingIcon, 0.2, {
+                Size = UDim2.new(0, 65, 0, 65)
+            })
+        end
+    end)
+    
+    -- Close Button
+    CloseButton.MouseButton1Click:Connect(function()
+        PlaySound(SoundAssets.Click, 0.5)
+        PulseEffect(CloseButton)
+        ToggleMenu()
+    end)
+    
+    CloseButton.MouseEnter:Connect(function()
+        CreateTween(CloseButton, 0.2, {
+            BackgroundColor3 = Theme.Warning
+        })
+    end)
+    
+    CloseButton.MouseLeave:Connect(function()
+        CreateTween(CloseButton, 0.2, {
+            BackgroundColor3 = Theme.Danger
+        })
+    end)
+    
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- 10. DRAG FUNCTIONALITY
+    -- ═══════════════════════════════════════════════════════════════════════════
+    
+    local Dragging = false
+    local DragStart = nil
+    local DragPos = nil
+    
+    Header.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             Dragging = true
-            DragStart = Input.Position
-            StartPos = ToggleBtn.Position
+            DragStart = input.Position
+            DragPos = MainFrame.Position
         end
     end)
     
-    UIS.InputChanged:Connect(function(Input)
-        if Dragging and (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) then
-            local Delta = Input.Position - DragStart
-            ToggleBtn.Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + Delta.X, StartPos.Y.Scale, StartPos.Y.Offset + Delta.Y)
-        end
-    end)
-    
-    UIS.InputEnded:Connect(function(Input)
-        if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+    Header.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             Dragging = false
         end
     end)
-
-    -- กดปุ่มเพื่อเปิด/ปิด เมนู
-    ToggleBtn.MouseButton1Click:Connect(function()
-        Main.Visible = not Main.Visible
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if Dragging and DragStart then
+            local Delta = input.Position - DragStart
+            MainFrame.Position = UDim2.new(
+                DragPos.X.Scale,
+                DragPos.X.Offset + Delta.X,
+                DragPos.Y.Scale,
+                DragPos.Y.Offset + Delta.Y
+            )
+        end
     end)
     
-    -- เปิดหน้าแรกอัตโนมัติ
-    AutoTab.Visible = true
-    print("Kanyapak UI Library Loaded Successfully!")
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- 11. STATISTICS DISPLAY
+    -- ═══════════════════════════════════════════════════════════════════════════
+    
+    local StatsFrame = Instance.new("Frame")
+    StatsFrame.Size = UDim2.new(1, 0, 0, 40)
+    StatsFrame.BackgroundColor3 = Theme.Surface
+    StatsFrame.BorderSizePixel = 0
+    StatsFrame.Parent = MainFrame
+    StatsFrame.Position = UDim2.new(0, 0, 1, -40)
+    StatsFrame.ZIndex = 101
+    
+    local StatsCorner = Instance.new("UICorner")
+    StatsCorner.CornerRadius = UDim.new(0, 15)
+    StatsCorner.Parent = StatsFrame
+    
+    local StatsText = Instance.new("TextLabel")
+    StatsText.Text = "⏱️ Session Time: 0s  |  🎯 Mobs: 0  |  ⭐ Exp: 0"
+    StatsText.Size = UDim2.new(1, -20, 1, 0)
+    StatsText.Position = UDim2.new(0, 10, 0, 0)
+    StatsText.BackgroundTransparency = 1
+    StatsText.TextColor3 = Theme.Primary
+    StatsText.Font = Enum.Font.Gotham
+    StatsText.TextSize = 11
+    StatsText.TextXAlignment = Enum.TextXAlignment.Left
+    StatsText.Parent = StatsFrame
+    StatsText.ZIndex = 102
+    
+    -- Update stats every second
+    RunService.Heartbeat:Connect(function()
+        if _G.Zenith_Data.Statistics then
+            local SessionTime = math.floor(_G.Zenith_Data.Statistics.SessionTime)
+            StatsText.Text = string.format(
+                "⏱️ %ds  |  🎯 %d Mobs  |  ⭐ %d Exp",
+                SessionTime,
+                _G.Zenith_Data.Statistics.MobsKilled,
+                _G.Zenith_Data.Statistics.ExpGained
+            )
+        end
+    end)
+    
+    print("✅ [KANYAPAK SHOP V3] Premium UI Loaded Successfully!")
+    print("📌 Features: Animations • Sounds • Collapsible Sections • Professional Design")
 end
 
-return UI_Lib
+return UI_Library
