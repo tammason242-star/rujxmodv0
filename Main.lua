@@ -224,94 +224,70 @@ end
 ConfigHandler:LoadConfig()
 
 -- ╔══════════════════════════════════════════════════════════════════════════════╗
--- ║                    6. UI LIBRARY LOADER (Fixed)
+-- ║                    6. UI LIBRARY LOADER (ULTIMATE FIXED)
 -- ╚══════════════════════════════════════════════════════════════════════════════╝
 
 Logger:Log("INFO", "═══ MODULE LOADING PHASE ═══")
 
 local UI_Library = nil
+local UI_URL = "https://raw.githubusercontent.com/tammason242-star/rujxmodv0/refs/heads/main/UI_Library.lua"
 
--- ✅ วิธีที่ 1: ลองโหลด UI_Library จาก ReplicatedStorage
-local function LoadUIFromStorage()
-    local Success, Module = pcall(function()
-        return require(game:GetService("ReplicatedStorage"):WaitForChild("UI_Library", 5))
-    end)
-    
-    if Success and Module then
-        Logger:Log("SUCCESS", "UI_Library loaded from ReplicatedStorage")
-        return Module
-    end
-    
-    return nil
-end
-
--- ✅ วิธีที่ 2: ลองโหลด UI_Library จาก ServerScriptService
-local function LoadUIFromServer()
-    local Success, Module = pcall(function()
-        return require(game:GetService("ServerScriptService"):WaitForChild("UI_Library", 5))
-    end)
-    
-    if Success and Module then
-        Logger:Log("SUCCESS", "UI_Library loaded from ServerScriptService")
-        return Module
-    end
-    
-    return nil
-end
-
--- ✅ วิธีที่ 3: ลองโหลด UI_Library จาก GitHub (Inline)
-local function LoadUIFromGitHub()
-    Logger:Log("INFO", "Attempting to load UI_Library from GitHub...")
+-- ✅ ฟังก์ชันโหลดตรงจาก GitHub แบบเช็คละเอียด
+local function LoadUI()
+    Logger:Log("INFO", "Downloading UI Library from GitHub...")
     
     local Success, Result = pcall(function()
-        return game:HttpGet("https://raw.githubusercontent.com/tammason242-star/rujxmodv0/refs/heads/main/UI_Library.lua?t=" .. tick())
+        return game:HttpGet(UI_URL .. "?t=" .. tick())
     end)
     
-    if Success then
-        local LoadFunc, SyntaxErr = loadstring(Result)
-        if LoadFunc then
-            local LoadSuccess, Module = pcall(LoadFunc)
-            if LoadSuccess then
-                Logger:Log("SUCCESS", "UI_Library loaded from GitHub")
-                return Module
-            else
-                Logger:Log("ERROR", "Runtime Error in GitHub UI_Library", Module)
-            end
-        else
-            Logger:Log("ERROR", "Syntax Error in GitHub UI_Library", SyntaxErr)
-        end
-    else
-        Logger:Log("WARN", "GitHub download failed", Result)
+    if not Success then
+        Logger:Log("ERROR", "Failed to connect to GitHub! (Check your internet or link)")
+        return nil
+    end
+
+    local LoadFunc, SyntaxErr = loadstring(Result)
+    if not LoadFunc then
+        Logger:Log("ERROR", "UI Library has syntax errors!", SyntaxErr)
+        return nil
+    end
+
+    local LoadSuccess, Module = pcall(LoadFunc)
+    if not LoadSuccess then
+        Logger:Log("ERROR", "UI Library crashed during execution!", Module)
+        return nil
     end
     
-    return nil
+    -- ตรวจสอบว่าสิ่งที่โหลดมาคือ Table (Library) จริงๆ ไม่ใช่ค่าว่าง
+    if type(Module) ~= "table" then
+        Logger:Log("ERROR", "UI Library did not return a valid table!")
+        return nil
+    end
+
+    return Module
 end
 
--- ✅ ลองโหลดตามลำดับ
-UI_Library = LoadUIFromStorage() or LoadUIFromServer() or LoadUIFromGitHub()
+-- ✅ เริ่มทำการโหลด
+UI_Library = LoadUI()
 
--- ✅ ถ้าทั้งหมดล้มเหลว ให้ใช้ Fallback
+-- ✅ ระบบป้องกัน: ถ้าโหลด UI ไม่สำเร็จ ให้หยุดการรันทันที
 if not UI_Library then
-    Logger:Log("ERROR", "UI_Library failed to load from all sources!")
-    Logger:Log("WARN", "Creating Fallback UI_Library...")
+    Logger:Log("ERROR", "FATAL: UI_Library failed to load!")
     
-    UI_Library = {
-        Init = function()
-            return {
-                CreateTab = function() return {} end,
-                AddToggle = function() end,
-                AddButton = function() end,
-                AddSlider = function() end,
-                AddLabel = function() end,
-                AddDropdown = function() end
-            }
-        end
-    }
+    -- แจ้งเตือนบนหน้าจอเกม
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "❌ KANYAPAK HUB ERROR",
+        Text = "ไม่สามารถโหลด UI ได้! กรุณาเช็ค F9 เพื่อดู Log",
+        Duration = 10
+    })
+    
+    _G.Kanyapak_Executed = false -- ยกเลิกสถานะการรัน
+    return -- จบสคริปต์ตรงนี้เลย
 end
 
 _G.Kanyapak_UI = UI_Library
-Logger:Log("SUCCESS", "UI_Library ready")
+Logger:Log("SUCCESS", "UI_Library is ready for use!")
 Logger:Log("INFO", "═══ MODULE LOADING COMPLETE ═══")
+
 
 -- ╔══════════════════════════════════════════════════════════════════════════════╗
 -- ║                    7. BUILD UI INTERFACE
