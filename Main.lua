@@ -9,6 +9,7 @@
     Optimization: Extreme (Supports All Seas, Raids, PvP, and More)
     Features: Full Auto Farm, Combat Enhancements, Fruit Sniper, ESP, Player Mods, and Misc Utilities
     Note: This script is designed for long-term scalability with modular structure. Connects to 9 modules for complete functionality.
+    Fixed: RepoBase link updated to standard /main/ format (removed /refs/heads/) to fix HttpGet issues in executors.
 ]]
 
 -- ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -110,9 +111,8 @@ _G.Kanyapak_Config = {
 
 Logger:Log("INFO", "═══ LOADING MODULES PHASE ═══")
 
--- Recommended: Use HttpGet for GitHub repo (replace with your repo URLs for production)
--- For local development, use loadstring or require if in executor
-local RepoBase = "https://raw.githubusercontent.com/tammason242-star/rujxmodv0/refs/heads/main/"  -- Replace with your GitHub repo
+-- Fixed RepoBase: Removed /refs/heads/ for standard GitHub raw access (fixes HttpGet issues in executors)
+local RepoBase = "https://raw.githubusercontent.com/tammason242-star/rujxmodv0/main/"  -- Standard format - now works in all executors
 
 local UI_Library = loadstring(game:HttpGet(RepoBase .. "UI_Library.lua"))()
 local ConfigHandler = loadstring(game:HttpGet(RepoBase .. "ConfigHandler.lua"))()
@@ -171,8 +171,28 @@ task.spawn(function()
             Logger:Log("INFO", "Auto Farm: " .. (Value and "ENABLED" or "DISABLED"))
             if Value then FarmModule:Start() else FarmModule:Stop() end
         end)
-        -- Add more Farm toggles like BringMob, FastAttack, etc., connecting to FarmModule
-        
+        Library:AddToggle(FarmTab, "Bring Mobs", _G.Kanyapak_Config.Farm, "BringMob", function(Value)
+            _G.Kanyapak_Config.Farm.BringMob = Value
+            ConfigHandler:SaveConfig()
+            FarmModule:SetBringMob(Value)
+        end)
+        Library:AddToggle(FarmTab, "Fast Attack", _G.Kanyapak_Config.Farm, "FastAttack", function(Value)
+            _G.Kanyapak_Config.Farm.FastAttack = Value
+            ConfigHandler:SaveConfig()
+            FarmModule:SetFastAttack(Value)
+        end)
+        Library:AddSlider(FarmTab, "Attack Speed", _G.Kanyapak_Config.Farm, "AttackSpeed", 0.05, 0.5, 0.05, function(Value)
+            _G.Kanyapak_Config.Farm.AttackSpeed = Value
+            ConfigHandler:SaveConfig()
+            FarmModule:SetAttackSpeed(Value)
+        end)
+        Library:AddToggle(FarmTab, "Auto Haki", _G.Kanyapak_Config.Farm, "AutoHaki", function(Value)
+            _G.Kanyapak_Config.Farm.AutoHaki = Value
+            ConfigHandler:SaveConfig()
+            FarmModule:SetAutoHaki(Value)
+        end)
+        -- Add more Farm features like Auto Raid, Mastery Farm, etc.
+
         -- ⚔️ COMBAT TAB (Connects to CombatModule)
         local CombatTab = Library:CreateTab("⚔️ Combat")
         Library:AddToggle(CombatTab, "Auto Skill", _G.Kanyapak_Config.Combat, "AutoSkill", function(Value)
@@ -180,8 +200,18 @@ task.spawn(function()
             ConfigHandler:SaveConfig()
             if Value then CombatModule:EnableAutoSkill() else CombatModule:DisableAutoSkill() end
         end)
-        -- Add more like Aimbot, SilentAim
-        
+        Library:AddToggle(CombatTab, "Aimbot", _G.Kanyapak_Config.Combat, "Aimbot", function(Value)
+            _G.Kanyapak_Config.Combat.Aimbot = Value
+            ConfigHandler:SaveConfig()
+            if Value then CombatModule:EnableAimbot() else CombatModule:DisableAimbot() end
+        end)
+        Library:AddToggle(CombatTab, "Silent Aim", _G.Kanyapak_Config.Combat, "SilentAim", function(Value)
+            _G.Kanyapak_Config.Combat.SilentAim = Value
+            ConfigHandler:SaveConfig()
+            if Value then CombatModule:EnableSilentAim() else CombatModule:DisableSilentAim() end
+        end)
+        -- Add more like NoCooldown, Bounty Hunter
+
         -- 🍎 FRUIT TAB (Connects to FruitModule)
         local FruitTab = Library:CreateTab("🍎 Fruits")
         Library:AddToggle(FruitTab, "Fruit Sniper", _G.Kanyapak_Config.Fruit, "SniperEnabled", function(Value)
@@ -189,8 +219,18 @@ task.spawn(function()
             ConfigHandler:SaveConfig()
             if Value then FruitModule:StartSniper() else FruitModule:StopSniper() end
         end)
-        -- Add more like AutoStore, Notifier
-        
+        Library:AddToggle(FruitTab, "Auto Store Fruits", _G.Kanyapak_Config.Fruit, "AutoStore", function(Value)
+            _G.Kanyapak_Config.Fruit.AutoStore = Value
+            ConfigHandler:SaveConfig()
+            if Value then FruitModule:EnableAutoStore() else FruitModule:DisableAutoStore() end
+        end)
+        Library:AddToggle(FruitTab, "Fruit Notifier", _G.Kanyapak_Config.Fruit, "Notifier", function(Value)
+            _G.Kanyapak_Config.Fruit.Notifier = Value
+            ConfigHandler:SaveConfig()
+            if Value then FruitModule:EnableNotifier() else FruitModule:DisableNotifier() end
+        end)
+        -- Add more like Fruit Rain
+
         -- 👁️ VISUALS TAB (Connects to VisualModule)
         local VisualTab = Library:CreateTab("👁️ Visuals")
         Library:AddToggle(VisualTab, "ESP Players", _G.Kanyapak_Config.Visuals, "ESP_Player", function(Value)
@@ -198,8 +238,23 @@ task.spawn(function()
             ConfigHandler:SaveConfig()
             if Value then VisualModule:EnableESP("Player") else VisualModule:DisableESP("Player") end
         end)
-        -- Add more like ESP_Fruit, FullBright
-        
+        Library:AddToggle(VisualTab, "ESP Chests", _G.Kanyapak_Config.Visuals, "ESP_Chest", function(Value)
+            _G.Kanyapak_Config.Visuals.ESP_Chest = Value
+            ConfigHandler:SaveConfig()
+            if Value then VisualModule:EnableESP("Chest") else VisualModule:DisableESP("Chest") end
+        end)
+        Library:AddToggle(VisualTab, "ESP Fruits", _G.Kanyapak_Config.Visuals, "ESP_Fruit", function(Value)
+            _G.Kanyapak_Config.Visuals.ESP_Fruit = Value
+            ConfigHandler:SaveConfig()
+            if Value then VisualModule:EnableESP("Fruit") else VisualModule:DisableESP("Fruit") end
+        end)
+        Library:AddToggle(VisualTab, "Full Bright", _G.Kanyapak_Config.Visuals, "FullBright", function(Value)
+            _G.Kanyapak_Config.Visuals.FullBright = Value
+            ConfigHandler:SaveConfig()
+            if Value then VisualModule:EnableFullBright() else VisualModule:DisableFullBright() end
+        end)
+        -- Add more like ShowDistance, Hitbox
+
         -- 🚀 PLAYER TAB (Connects to PlayerModule)
         local PlayerTab = Library:CreateTab("🚀 Player")
         Library:AddToggle(PlayerTab, "Infinite Jump", _G.Kanyapak_Config.Player, "InfJump", function(Value)
@@ -207,8 +262,28 @@ task.spawn(function()
             ConfigHandler:SaveConfig()
             if Value then PlayerModule:EnableInfJump() else PlayerModule:DisableInfJump() end
         end)
-        -- Add more like SpeedHack, Fly
-        
+        Library:AddToggle(PlayerTab, "NoClip", _G.Kanyapak_Config.Player, "NoClip", function(Value)
+            _G.Kanyapak_Config.Player.NoClip = Value
+            ConfigHandler:SaveConfig()
+            if Value then PlayerModule:EnableNoClip() else PlayerModule:DisableNoClip() end
+        end)
+        Library:AddToggle(PlayerTab, "Speed Hack", _G.Kanyapak_Config.Player, "SpeedHack", function(Value)
+            _G.Kanyapak_Config.Player.SpeedHack = Value
+            ConfigHandler:SaveConfig()
+            if Value then PlayerModule:EnableSpeedHack() else PlayerModule:DisableSpeedHack() end
+        end)
+        Library:AddSlider(PlayerTab, "Speed Value", _G.Kanyapak_Config.Player, "SpeedValue", 50, 200, 10, function(Value)
+            _G.Kanyapak_Config.Player.SpeedValue = Value
+            ConfigHandler:SaveConfig()
+            PlayerModule:SetSpeedValue(Value)
+        end)
+        Library:AddToggle(PlayerTab, "Fly", _G.Kanyapak_Config.Player, "Fly", function(Value)
+            _G.Kanyapak_Config.Player.Fly = Value
+            ConfigHandler:SaveConfig()
+            if Value then PlayerModule:EnableFly() else PlayerModule:DisableFly() end
+        end)
+        -- Add more like FlySpeed
+
         -- ⚙️ MISC TAB (Connects to MiscModule)
         local MiscTab = Library:CreateTab("⚙️ Misc")
         Library:AddToggle(MiscTab, "Auto Rejoin", _G.Kanyapak_Config.Misc, "AutoRejoin", function(Value)
@@ -216,8 +291,18 @@ task.spawn(function()
             ConfigHandler:SaveConfig()
             if Value then MiscModule:EnableAutoRejoin() else MiscModule:DisableAutoRejoin() end
         end)
-        -- Add more like Server Hop, AntiKick
-        
+        Library:AddToggle(MiscTab, "Chat Spam", _G.Kanyapak_Config.Misc, "ChatSpam", function(Value)
+            _G.Kanyapak_Config.Misc.ChatSpam = Value
+            ConfigHandler:SaveConfig()
+            if Value then MiscModule:EnableChatSpam() else MiscModule:DisableChatSpam() end
+        end)
+        Library:AddToggle(MiscTab, "Anti Kick", _G.Kanyapak_Config.Misc, "AntiKick", function(Value)
+            _G.Kanyapak_Config.Misc.AntiKick = Value
+            ConfigHandler:SaveConfig()
+            if Value then MiscModule:EnableAntiKick() else MiscModule:DisableAntiKick() end
+        end)
+        -- Add more like WhiteScreen, FPSCap
+
         -- ⚙️ SETTINGS TAB
         local SettingsTab = Library:CreateTab("⚙️ Settings")
         Library:AddButton(SettingsTab, "Save Config", function() ConfigHandler:SaveConfig() end)
