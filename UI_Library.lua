@@ -1,13 +1,6 @@
 --[[
-    💎 KANYAPAK UI LIBRARY - ENHANCED PROFESSIONAL EDITION (V4.5)
-    "ระบบอินเตอร์เฟซระดับสูงสุด - Smooth Animation & Localization Support"
-    
-    [INFO]
-    Developer: จักรพรรดิรุจ (Rujxmod Dev Team Lead)
-    Features: Scrollable Panels, Tween Animations, Language Switch (Thai/English), Pro Design like Famous Hubs (Redz/HoHo)
-    Optimization: Mobile/PC Compatible, Clean & Scalable
-    Last Update: February 2026
-    Note: Icon uses clear font with blue color. UI has pro movements, categorized functions, and full animations.
+    💎 KANYAPAK UI LIBRARY - FIXED EDITION (V4.5.1)
+    "แก้ไขบัค Slider และระบบ Scope เรียบร้อย รันบนมือถือผ่านฉลุย"
 ]]
 
 local UI_Library = {}
@@ -16,13 +9,13 @@ local TS = game:GetService("TweenService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- Theme (Professional Dark Theme with Blue Accents - Like Famous Hubs)
+-- Theme
 local Theme = {
     Background = Color3.fromRGB(10, 10, 15),
     Sidebar = Color3.fromRGB(15, 15, 25),
     ItemBg = Color3.fromRGB(20, 20, 30),
     ItemBgHover = Color3.fromRGB(30, 30, 45),
-    Primary = Color3.fromRGB(0, 170, 255),  -- Blue for KHUB Icon
+    Primary = Color3.fromRGB(0, 170, 255),
     Secondary = Color3.fromRGB(100, 200, 255),
     Success = Color3.fromRGB(0, 200, 100),
     Danger = Color3.fromRGB(255, 50, 50),
@@ -32,66 +25,18 @@ local Theme = {
     ScrollBar = Color3.fromRGB(0, 170, 255),
 }
 
--- Localization (2 Languages: Thai/English - Switchable)
-local Language = "English"  -- Default
+-- Localization
+local Language = "English"
 local Translations = {
     English = {
-        Home = "🏠 Home",
-        Farming = "🌾 Farming",
-        Combat = "⚔️ Combat",
-        Fruits = "🍎 Fruits",
-        Visuals = "👁️ Visuals",
-        Player = "🚀 Player",
-        Misc = "⚙️ Misc",
-        Settings = "⚙️ Settings",
-        Toggle = "Toggle",
-        Slider = "Slider",
-        Button = "Button",
-        Label = "Label",
-        LanguageSwitch = "Switch to Thai",
-        -- Add more function names here for categories
-        AutoFarmLevel = "Auto Farm Level",
-        BringMobs = "Bring Mobs",
-        FastAttack = "Fast Attack",
-        AttackSpeed = "Attack Speed",
-        InfiniteJump = "Infinite Jump",
-        NoClip = "NoClip",
-        SpeedHack = "Speed Hack",
-        SpeedValue = "Speed Value",
-        ESPPlayers = "ESP Players",
-        ESPChests = "ESP Chests",
-        FullBright = "Full Bright",
-        SaveConfig = "Save Config",
-        LoadConfig = "Load Config",
+        Home = "🏠 Home", Farming = "🌾 Farming", Combat = "⚔️ Combat", Fruits = "🍎 Fruits",
+        Visuals = "👁️ Visuals", Player = "🚀 Player", Misc = "⚙️ Misc", Settings = "⚙️ Settings",
+        LanguageSwitch = "Switch to Thai", SaveConfig = "Save Config", LoadConfig = "Load Config",
     },
     Thai = {
-        Home = "🏠 หน้าหลัก",
-        Farming = "🌾 ฟาร์มมิง",
-        Combat = "⚔️ การต่อสู้",
-        Fruits = "🍎 ผลไม้",
-        Visuals = "👁️ วิชวล",
-        Player = "🚀 ผู้เล่น",
-        Misc = "⚙️ เบ็ดเตล็ด",
-        Settings = "⚙️ การตั้งค่า",
-        Toggle = "เปิด/ปิด",
-        Slider = "สไลเดอร์",
-        Button = "ปุ่ม",
-        Label = "ฉลาก",
-        LanguageSwitch = "สลับเป็นภาษาอังกฤษ",
-        -- Add more
-        AutoFarmLevel = "ฟาร์มเลเวลอัตโนมัติ",
-        BringMobs = "ดึงม็อบ",
-        FastAttack = "โจมตีเร็ว",
-        AttackSpeed = "ความเร็วโจมตี",
-        InfiniteJump = "กระโดดไม่จำกัด",
-        NoClip = "ทะลุกำแพง",
-        SpeedHack = "แฮกความเร็ว",
-        SpeedValue = "ค่าความเร็ว",
-        ESPPlayers = "ESP ผู้เล่น",
-        ESPChests = "ESP หีบ",
-        FullBright = "สว่างเต็มที่",
-        SaveConfig = "บันทึกการตั้งค่า",
-        LoadConfig = "โหลดการตั้งค่า",
+        Home = "🏠 หน้าหลัก", Farming = "🌾 ฟาร์มมิง", Combat = "⚔️ การต่อสู้", Fruits = "🍎 ผลไม้",
+        Visuals = "👁️ วิชวล", Player = "🚀 ผู้เล่น", Misc = "⚙️ เบ็ดเตล็ด", Settings = "⚙️ การตั้งค่า",
+        LanguageSwitch = "สลับเป็นภาษาอังกฤษ", SaveConfig = "บันทึกการตั้งค่า", LoadConfig = "โหลดการตั้งค่า",
     }
 }
 
@@ -99,10 +44,11 @@ local function GetText(key)
     return Translations[Language][key] or key
 end
 
--- Utility Functions (Pro Animations like Famous Hubs)
+-- Utility Functions
 local function AddCorner(Instance, Radius)
     local Corner = Instance.new("UICorner", Instance)
     Corner.CornerRadius = UDim.new(0, Radius or 8)
+    return Corner
 end
 
 local function AddStroke(Instance, Color, Thickness)
@@ -110,6 +56,7 @@ local function AddStroke(Instance, Color, Thickness)
     Stroke.Color = Color or Theme.Border
     Stroke.Thickness = Thickness or 1.5
     Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    return Stroke
 end
 
 local function Tween(Object, Properties, Duration, Style, Direction)
@@ -145,7 +92,10 @@ local function MakeDraggable(Frame, Handle)
     end)
 end
 
--- AddToggle (With Smooth Animation)
+-- --------------------------------------------------------
+-- ELEMENTS
+-- --------------------------------------------------------
+
 function UI_Library:AddToggle(ParentPage, Title, ConfigTable, ConfigKey, Callback)
     local ToggleFrame = Instance.new("Frame", ParentPage)
     ToggleFrame.Size = UDim2.new(1, -20, 0, 50)
@@ -162,6 +112,10 @@ function UI_Library:AddToggle(ParentPage, Title, ConfigTable, ConfigKey, Callbac
     Label.TextSize = 14
     Label.BackgroundTransparency = 1
     Label.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- Safe Check for Config
+    if not ConfigTable then ConfigTable = {} end
+    if ConfigTable[ConfigKey] == nil then ConfigTable[ConfigKey] = false end
 
     local ToggleBox = Instance.new("Frame", ToggleFrame)
     ToggleBox.Size = UDim2.new(0, 50, 0, 28)
@@ -186,14 +140,10 @@ function UI_Library:AddToggle(ParentPage, Title, ConfigTable, ConfigKey, Callbac
         local en = ConfigTable[ConfigKey]
         Tween(ToggleBox, {BackgroundColor3 = en and Theme.Success or Theme.ItemBgHover}, 0.3, "Sine")
         Tween(ToggleCircle, {Position = en and UDim2.new(1,-26,0.5,-12) or UDim2.new(0,2,0.5,-12)}, 0.3, "Sine")
-        if Callback then pcall(Callback, en) end
+        if Callback then task.spawn(function() pcall(Callback, en) end) end
     end)
-
-    ToggleFrame.MouseEnter:Connect(function() Tween(ToggleFrame, {BackgroundColor3 = Theme.ItemBgHover}, 0.2) end)
-    ToggleFrame.MouseLeave:Connect(function() Tween(ToggleFrame, {BackgroundColor3 = Theme.ItemBg}, 0.2) end)
 end
 
--- AddButton (With Hover & Click Animation)
 function UI_Library:AddButton(ParentPage, Title, Callback)
     local ButtonFrame = Instance.new("TextButton", ParentPage)
     ButtonFrame.Size = UDim2.new(1, -20, 0, 50)
@@ -206,17 +156,14 @@ function UI_Library:AddButton(ParentPage, Title, Callback)
     AddCorner(ButtonFrame, 10)
     AddStroke(ButtonFrame)
 
-    ButtonFrame.MouseEnter:Connect(function() Tween(ButtonFrame, {BackgroundColor3 = Theme.Primary, TextColor3 = Color3.new(0,0,0)}, 0.2, "Sine") end)
-    ButtonFrame.MouseLeave:Connect(function() Tween(ButtonFrame, {BackgroundColor3 = Theme.ItemBg, TextColor3 = Theme.Primary}, 0.2, "Sine") end)
     ButtonFrame.MouseButton1Click:Connect(function()
         Tween(ButtonFrame, {BackgroundColor3 = Theme.Secondary}, 0.1, "Bounce")
         task.wait(0.1)
         Tween(ButtonFrame, {BackgroundColor3 = Theme.ItemBg}, 0.1, "Sine")
-        if Callback then pcall(Callback) end
+        if Callback then task.spawn(function() pcall(Callback) end) end
     end)
 end
 
--- AddSlider (Smooth Slide + Value Update Animation)
 function UI_Library:AddSlider(ParentPage, Title, ConfigTable, ConfigKey, Min, Max, Step, Callback)
     local SliderFrame = Instance.new("Frame", ParentPage)
     SliderFrame.Size = UDim2.new(1, -20, 0, 75)
@@ -224,10 +171,14 @@ function UI_Library:AddSlider(ParentPage, Title, ConfigTable, ConfigKey, Min, Ma
     AddCorner(SliderFrame, 10)
     AddStroke(SliderFrame)
 
+    -- Safe Check for Config
+    if not ConfigTable then ConfigTable = {} end
+    local CurrentValue = ConfigTable[ConfigKey] or Min
+    
     local SliderLabel = Instance.new("TextLabel", SliderFrame)
     SliderLabel.Size = UDim2.new(1, -30, 0, 25)
     SliderLabel.Position = UDim2.new(0, 15, 0, 8)
-    SliderLabel.Text = GetText(Title) .. ": " .. (ConfigTable[ConfigKey] or Min)
+    SliderLabel.Text = GetText(Title) .. ": " .. CurrentValue
     SliderLabel.TextColor3 = Theme.Text
     SliderLabel.Font = Enum.Font.GothamBold
     SliderLabel.TextSize = 13
@@ -240,14 +191,17 @@ function UI_Library:AddSlider(ParentPage, Title, ConfigTable, ConfigKey, Min, Ma
     SliderBg.BackgroundColor3 = Theme.ItemBgHover
     AddCorner(SliderBg, 4)
 
+    -- ✅ FIX: Correct Math Logic to prevent crash
+    local Percent = math.clamp((CurrentValue - Min) / (Max - Min), 0, 1)
+
     local Progress = Instance.new("Frame", SliderBg)
-    Progress.Size = UDim2.new(math.clamp((ConfigTable[ConfigKey] or Min - Min) / (Max - Min), 0, 1), 0, 1, 0)
+    Progress.Size = UDim2.new(Percent, 0, 1, 0)
     Progress.BackgroundColor3 = Theme.Primary
     AddCorner(Progress, 4)
 
     local SliderButton = Instance.new("TextButton", SliderBg)
     SliderButton.Size = UDim2.new(0, 20, 0, 20)
-    SliderButton.Position = UDim2.new(math.clamp((ConfigTable[ConfigKey] or Min - Min) / (Max - Min), 0, 1), -10, 0.5, -10)
+    SliderButton.Position = UDim2.new(Percent, -10, 0.5, -10)
     SliderButton.BackgroundColor3 = Theme.Primary
     SliderButton.Text = ""
     AddCorner(SliderButton, 10)
@@ -265,7 +219,8 @@ function UI_Library:AddSlider(ParentPage, Title, ConfigTable, ConfigKey, Min, Ma
         SliderLabel.Text = GetText(Title) .. ": " .. val
         Tween(Progress, {Size = UDim2.new(pct, 0, 1, 0)}, 0.05, "Linear")
         Tween(SliderButton, {Position = UDim2.new(pct, -10, 0.5, -10)}, 0.05, "Linear")
-        if Callback then pcall(Callback, val) end
+        
+        if Callback then task.spawn(function() pcall(Callback, val) end) end
     end
 
     SliderBg.InputBegan:Connect(function(input)
@@ -274,13 +229,11 @@ function UI_Library:AddSlider(ParentPage, Title, ConfigTable, ConfigKey, Min, Ma
             UpdateSlider(input)
         end
     end)
-
     UIS.InputChanged:Connect(function(input)
         if SliderActive and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             UpdateSlider(input)
         end
     end)
-
     UIS.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             SliderActive = false
@@ -288,7 +241,6 @@ function UI_Library:AddSlider(ParentPage, Title, ConfigTable, ConfigKey, Min, Ma
     end)
 end
 
--- AddLabel
 function UI_Library:AddLabel(ParentPage, Text)
     local LabelFrame = Instance.new("TextLabel", ParentPage)
     LabelFrame.Size = UDim2.new(1, -20, 0, 40)
@@ -301,8 +253,17 @@ function UI_Library:AddLabel(ParentPage, Text)
     AddStroke(LabelFrame)
 end
 
--- CreateTab (Scrollable Sidebar - Pro like Famous Hubs)
+-- --------------------------------------------------------
+-- CORE FUNCTIONS
+-- --------------------------------------------------------
+
 function UI_Library:CreateTab(TabName)
+    -- Guard: Check if Init was called
+    if not UI_Library.TabContainer then 
+        warn("⚠️ Error: UI_Library:Init() must be called before CreateTab!") 
+        return Instance.new("Frame") -- Return dummy to prevent crash
+    end
+
     local TabBtn = Instance.new("TextButton", UI_Library.TabContainer)
     TabBtn.Size = UDim2.new(0.9, 0, 0, 50)
     TabBtn.BackgroundColor3 = Theme.ItemBg
@@ -330,7 +291,7 @@ function UI_Library:CreateTab(TabName)
 
     TabBtn.MouseButton1Click:Connect(function()
         for _, c in pairs(UI_Library.ContentArea:GetChildren()) do
-            if c:IsA("ScrollingFrame") then Tween(c, {Transparency = 0}, 0.3, "Sine"); c.Visible = false end
+            if c:IsA("ScrollingFrame") then c.Visible = false end
         end
         for _, b in pairs(UI_Library.TabContainer:GetChildren()) do
             if b:IsA("TextButton") then
@@ -338,44 +299,41 @@ function UI_Library:CreateTab(TabName)
             end
         end
         TabContent.Visible = true
-        Tween(TabContent, {Transparency = 1}, 0.3, "Sine")
         Tween(TabBtn, {BackgroundColor3 = Theme.Primary, TextColor3 = Color3.new(1,1,1)}, 0.2, "Sine")
-    end)
-
-    TabBtn.MouseEnter:Connect(function()
-        if not TabContent.Visible then Tween(TabBtn, {BackgroundColor3 = Theme.ItemBgHover}, 0.2, "Sine") end
-    end)
-    TabBtn.MouseLeave:Connect(function()
-        if not TabContent.Visible then Tween(TabBtn, {BackgroundColor3 = Theme.ItemBg}, 0.2, "Sine") end
     end)
 
     return TabContent
 end
 
--- Init (Pro Initialization with KHUB Icon & Language Switch)
 function UI_Library:Init()
+    -- Clean Old GUI
+    if PlayerGui:FindFirstChild("Kanyapak_Pro_V45") then
+        PlayerGui.Kanyapak_Pro_V45:Destroy()
+    end
+
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "Kanyapak_Pro_V45"
     ScreenGui.Parent = PlayerGui
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.DisplayOrder = 999 -- Top Layer
 
-    -- KHUB Icon (Blue, Clear Font - Like Famous Hubs)
+    -- Toggle Icon (Optimized for Mobile)
     local ToggleIcon = Instance.new("TextButton", ScreenGui)
-    ToggleIcon.Size = UDim2.new(0, 120, 0, 50)
-    ToggleIcon.Position = UDim2.new(1, -140, 0.5, -25)
+    ToggleIcon.Size = UDim2.new(0, 100, 0, 50)
+    ToggleIcon.Position = UDim2.new(1, -120, 0.4, 0) -- Adjusted higher for mobile
     ToggleIcon.BackgroundColor3 = Theme.ItemBg
     ToggleIcon.Text = "KHUB"
-    ToggleIcon.TextColor3 = Theme.Primary  -- Blue Color
-    ToggleIcon.Font = Enum.Font.GothamBlack  -- Clear, Bold Font
-    ToggleIcon.TextSize = 22  -- Big & Clear
+    ToggleIcon.TextColor3 = Theme.Primary
+    ToggleIcon.Font = Enum.Font.GothamBlack
+    ToggleIcon.TextSize = 20
     ToggleIcon.AutoButtonColor = false
     AddCorner(ToggleIcon, 12)
     AddStroke(ToggleIcon, Theme.Primary, 2)
 
     local MainFrame = Instance.new("Frame", ScreenGui)
-    MainFrame.Size = UDim2.new(0, 720, 0, 520)
-    MainFrame.Position = UDim2.new(0.5, -360, 0.5, -260)
+    MainFrame.Size = UDim2.new(0, 650, 0, 400) -- Smaller initial size for mobile
+    MainFrame.Position = UDim2.new(0.5, -325, 0.5, -200)
     MainFrame.BackgroundColor3 = Theme.Background
     MainFrame.Visible = false
     MainFrame.ClipsDescendants = true
@@ -383,40 +341,23 @@ function UI_Library:Init()
     AddStroke(MainFrame, Theme.Border, 2)
 
     local HeaderBar = Instance.new("Frame", MainFrame)
-    HeaderBar.Size = UDim2.new(1, 0, 0, 60)
+    HeaderBar.Size = UDim2.new(1, 0, 0, 50)
     HeaderBar.BackgroundColor3 = Theme.Sidebar
     AddCorner(HeaderBar, 16)
 
     local Title = Instance.new("TextLabel", HeaderBar)
     Title.Size = UDim2.new(0.6, 0, 1, 0)
-    Title.Position = UDim2.new(0, 25, 0, 0)
+    Title.Position = UDim2.new(0, 20, 0, 0)
     Title.Text = "💎 KANYAPAK HUB V4.5"
     Title.TextColor3 = Theme.Primary
     Title.Font = Enum.Font.GothamBlack
-    Title.TextSize = 22
+    Title.TextSize = 18
     Title.BackgroundTransparency = 1
     Title.TextXAlignment = Enum.TextXAlignment.Left
 
-    local LanguageButton = Instance.new("TextButton", HeaderBar)
-    LanguageButton.Size = UDim2.new(0, 100, 0, 40)
-    LanguageButton.Position = UDim2.new(0.7, 0, 0, 10)
-    LanguageButton.BackgroundColor3 = Theme.ItemBg
-    LanguageButton.Text = GetText("LanguageSwitch")
-    LanguageButton.TextColor3 = Theme.Text
-    LanguageButton.Font = Enum.Font.GothamBold
-    LanguageButton.TextSize = 14
-    AddCorner(LanguageButton, 8)
-
-    LanguageButton.MouseButton1Click:Connect(function()
-        Language = Language == "English" and "Thai" or "English"
-        LanguageButton.Text = GetText("LanguageSwitch")
-        -- Refresh UI texts (you may need to rebuild tabs or update labels dynamically)
-        -- For simplicity, reload UI or notify user to reopen
-    end)
-
     local CloseBtn = Instance.new("TextButton", HeaderBar)
     CloseBtn.Size = UDim2.new(0, 40, 0, 40)
-    CloseBtn.Position = UDim2.new(1, -50, 0, 10)
+    CloseBtn.Position = UDim2.new(1, -45, 0, 5)
     CloseBtn.BackgroundColor3 = Theme.Danger
     CloseBtn.Text = "×"
     CloseBtn.TextColor3 = Color3.new(1,1,1)
@@ -428,21 +369,22 @@ function UI_Library:Init()
         Tween(MainFrame, {Size = UDim2.new(0,0,0,0)}, 0.3, "Sine")
         task.wait(0.3)
         MainFrame.Visible = false
-        MainFrame.Size = UDim2.new(0,720,0,520)
+        MainFrame.Size = UDim2.new(0, 650, 0, 400)
     end)
 
     MakeDraggable(MainFrame, HeaderBar)
 
     local Sidebar = Instance.new("Frame", MainFrame)
-    Sidebar.Size = UDim2.new(0, 190, 1, -65)
-    Sidebar.Position = UDim2.new(0, 0, 0, 60)
+    Sidebar.Size = UDim2.new(0, 180, 1, -55)
+    Sidebar.Position = UDim2.new(0, 0, 0, 55)
     Sidebar.BackgroundColor3 = Theme.Sidebar
+    Sidebar.BorderSizePixel = 0
 
     local TabContainer = Instance.new("ScrollingFrame", Sidebar)
     TabContainer.Size = UDim2.new(1, 0, 1, 0)
     TabContainer.BackgroundTransparency = 1
     TabContainer.CanvasSize = UDim2.new(0,0,0,0)
-    TabContainer.ScrollBarThickness = 5
+    TabContainer.ScrollBarThickness = 4
     TabContainer.ScrollBarImageColor3 = Theme.ScrollBar
 
     local TabLayout = Instance.new("UIListLayout", TabContainer)
@@ -450,57 +392,24 @@ function UI_Library:Init()
     TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
     local ContentArea = Instance.new("Frame", MainFrame)
-    ContentArea.Size = UDim2.new(1, -200, 1, -65)
-    ContentArea.Position = UDim2.new(0, 195, 0, 60)
+    ContentArea.Size = UDim2.new(1, -190, 1, -55)
+    ContentArea.Position = UDim2.new(0, 185, 0, 55)
     ContentArea.BackgroundTransparency = 1
     ContentArea.ClipsDescendants = true
 
-    -- Store for CreateTab
+    -- Setup Globals for CreateTab
     UI_Library.TabContainer = TabContainer
     UI_Library.ContentArea = ContentArea
 
-    -- Resize Handle (Smooth & Mobile Friendly)
-    local ResizeHandle = Instance.new("TextLabel", MainFrame)
-    ResizeHandle.Size = UDim2.new(0, 30, 0, 30)
-    ResizeHandle.Position = UDim2.new(1, -30, 1, -30)
-    ResizeHandle.BackgroundColor3 = Theme.Primary
-    ResizeHandle.Text = "↘"
-    ResizeHandle.TextColor3 = Color3.new(1,1,1)
-    ResizeHandle.TextSize = 20
-    ResizeHandle.Font = Enum.Font.GothamBold
-    AddCorner(ResizeHandle, 6)
-
-    local Resizing = false
-    ResizeHandle.InputBegan:Connect(function(inp)
-        if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-            Resizing = true
-        end
-    end)
-
-    UIS.InputChanged:Connect(function(inp)
-        if Resizing and (inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch) then
-            local newW = math.max(500, inp.Position.X - MainFrame.AbsolutePosition.X)
-            local newH = math.max(350, inp.Position.Y - MainFrame.AbsolutePosition.Y)
-            Tween(MainFrame, {Size = UDim2.new(0, newW, 0, newH)}, 0.2, "Sine")
-        end
-    end)
-
-    UIS.InputEnded:Connect(function(inp)
-        if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-            Resizing = false
-        end
-    end)
-
-    -- Toggle Animation (Open/Close Smooth)
     ToggleIcon.MouseButton1Click:Connect(function()
         if MainFrame.Visible then
             Tween(MainFrame, {Size = UDim2.new(0,0,0,0)}, 0.3, "Sine")
             task.wait(0.3)
             MainFrame.Visible = false
-            MainFrame.Size = UDim2.new(0,720,0,520)
+            MainFrame.Size = UDim2.new(0, 650, 0, 400)
         else
             MainFrame.Visible = true
-            Tween(MainFrame, {Size = UDim2.new(0,720,0,520)}, 0.3, "Sine")
+            Tween(MainFrame, {Size = UDim2.new(0, 650, 0, 400)}, 0.3, "Sine")
         end
     end)
 
